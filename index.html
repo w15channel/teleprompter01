@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teleprompter Gratuito WPM</title>
+    <style>
+        /* Estilo Geral */
+        body { margin: 0; background-color: #111; color: white; font-family: Arial, sans-serif; overflow: hidden; }
+        
+        /* Menu de Configuração */
+        #setup-panel {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #222; z-index: 10; padding: 20px; box-sizing: border-box;
+            display: flex; flex-direction: column; gap: 10px; overflow-y: auto;
+        }
+        textarea {
+            width: 100%; height: 200px; background: #333; color: #fff;
+            border: 1px solid #555; padding: 10px; font-size: 16px;
+        }
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+        label { margin-right: 10px; }
+        input[type="number"], input[type="range"] { padding: 5px; background: #333; color: white; border: 1px solid #555; }
+        button {
+            padding: 10px 20px; background: #007bff; color: white; border: none; cursor: pointer; font-size: 16px;
+        }
+        button.stop { background: #dc3545; }
+        
+        /* Área do Teleprompter */
+        #prompter-container {
+            display: none; /* Escondido inicialmente */
+            width: 100%; height: 100vh;
+            overflow: hidden; /* O JS vai controlar o scroll */
+            position: relative;
+        }
+        
+        #scrolling-text {
+            padding: 50vh 20px; /* Padding grande para o texto começar no meio */
+            font-size: 40px; line-height: 1.5; text-align: center;
+            font-weight: bold;
+        }
+
+        /* Classes de Espelhamento */
+        .mirror-x { transform: scaleX(-1); } /* Horizontal */
+        .mirror-y { transform: scaleY(-1); } /* Vertical */
+        .mirror-xy { transform: scale(-1, -1); } /* Ambos */
+
+        /* Botão flutuante para parar */
+        #floating-stop {
+            position: fixed; top: 20px; right: 20px; z-index: 20; opacity: 0.3;
+            display: none;
+        }
+        #floating-stop:hover { opacity: 1; }
+    </style>
+</head>
+<body>
+
+    <div id="setup-panel">
+        <h2>Configuração do Teleprompter</h2>
+        <textarea id="input-text" placeholder="Cole seu texto aqui...">Olá! Este é o seu novo teleprompter. Cole seu roteiro aqui, ajuste a velocidade e comece a gravar.</textarea>
+        
+        <div class="controls">
+            <div>
+                <label>Tamanho da Fonte (px):</label>
+                <input type="number" id="font-size" value="60">
+            </div>
+            <div>
+                <label>Velocidade (WPM - Palavras/min):</label>
+                <input type="number" id="wpm-speed" value="150">
+            </div>
+        </div>
+
+        <div class="controls">
+            <label><input type="checkbox" id="check-mirror-x"> Espelhar Horizontal (X)</label>
+            <label><input type="checkbox" id="check-mirror-y"> Espelhar Vertical (Y)</label>
+        </div>
+
+        <button onclick="startPrompter()">INICIAR PROMPTER</button>
+    </div>
+
+    <div id="prompter-container">
+        <div id="scrolling-text"></div>
+    </div>
+    
+    <button id="floating-stop" class="stop" onclick="stopPrompter()">PARAR / VOLTAR</button>
+
+    <script>
+        let scrollInterval;
+        let currentScroll = 0;
+
+        function startPrompter() {
+            // 1. Pegar valores
+            const text = document.getElementById('input-text').value;
+            const fontSize = document.getElementById('font-size').value;
+            const wpm = parseInt(document.getElementById('wpm-speed').value);
+            const mirrorX = document.getElementById('check-mirror-x').checked;
+            const mirrorY = document.getElementById('check-mirror-y').checked;
+
+            if (!text) return alert("Por favor, insira um texto!");
+
+            // 2. Configurar a tela
+            const container = document.getElementById('prompter-container');
+            const textBox = document.getElementById('scrolling-text');
+            const setupPanel = document.getElementById('setup-panel');
+            const stopBtn = document.getElementById('floating-stop');
+
+            textBox.innerHTML = text.replace(/\n/g, "<br>"); // Quebras de linha
+            textBox.style.fontSize = fontSize + "px";
+            
+            // Aplicar Espelhamento
+            container.className = ""; // Limpa classes anteriores
+            if (mirrorX && mirrorY) container.classList.add('mirror-xy');
+            else if (mirrorX) container.classList.add('mirror-x');
+            else if (mirrorY) container.classList.add('mirror-y');
+
+            // Trocar telas
+            setupPanel.style.display = 'none';
+            container.style.display = 'block';
+            stopBtn.style.display = 'block';
+
+            // 3. Lógica de Velocidade (WPM)
+            // Estimativa: Altura média de uma linha baseada no tamanho da fonte
+            // Vamos calcular quantos pixels precisamos rolar por milissegundo
+            
+            // Contagem de palavras
+            const wordCount = text.split(/\s+/).length;
+            
+            // Tempo total desejado em minutos = palavras / wpm
+            // Tempo em segundos = (palavras / wpm) * 60
+            const totalTimeSeconds = (wordCount / wpm) * 60;
+            
+            // Precisamos calcular a altura total do texto para rolar
+            // Pequeno delay para o navegador renderizar a altura correta
+            setTimeout(() => {
+                const totalHeight = textBox.scrollHeight; // Altura total do texto em pixels
+                const pixelsPerSecond = totalHeight / totalTimeSeconds;
+                const intervalTime = 20; // Atualiza a cada 20ms (50fps)
+                const pixelsPerTick = pixelsPerSecond * (intervalTime / 1000);
+
+                currentScroll = 0;
+                window.scrollTo(0,0);
+
+                scrollInterval = setInterval(() => {
+                    currentScroll += pixelsPerTick;
+                    window.scrollTo(0, currentScroll);
+
+                    // Parar se chegar ao fim
+                    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+                        // Opcional: parar automático ou loop
+                    }
+                }, intervalTime);
+
+            }, 500);
+        }
+
+        function stopPrompter() {
+            clearInterval(scrollInterval);
+            document.getElementById('prompter-container').style.display = 'none';
+            document.getElementById('floating-stop').style.display = 'none';
+            document.getElementById('setup-panel').style.display = 'flex';
+            window.scrollTo(0,0);
+        }
+    </script>
+</body>
+</html>
