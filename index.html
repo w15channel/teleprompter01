@@ -3,140 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Teleprompter V14 - Studio</title>
+    <title>Teleprompter Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        /* --- ESTILO GERAL --- */
-        body { margin: 0; background-color: #000; color: white; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
+        /* --- ESTILO GERAL (MODERN STUDIO) --- */
+        :root {
+            --bg-color: #0f0f12;
+            --panel-bg: #18181b;
+            --accent: #3b82f6; /* Azul Pro */
+            --accent-hover: #2563eb;
+            --text-main: #e4e4e7;
+            --text-muted: #a1a1aa;
+            --border: #27272a;
+        }
+
+        body { margin: 0; background-color: black; color: var(--text-main); font-family: 'Inter', sans-serif; overflow: hidden; }
         
-        /* Menu de Configuração */
+        /* --- PAINEL DE CONFIGURAÇÃO --- */
         #setup-panel {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #111; z-index: 50; padding: 20px; box-sizing: border-box;
-            display: flex; flex-direction: column; gap: 15px; overflow-y: auto;
+            background: var(--bg-color); z-index: 50; padding: 30px; box-sizing: border-box;
+            display: flex; flex-direction: column; gap: 20px; overflow-y: auto;
+            max-width: 800px; margin: 0 auto; /* Centraliza o painel em telas grandes */
+            border-right: 1px solid var(--border); border-left: 1px solid var(--border);
         }
 
-        h2 { color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
+        h1 { color: white; margin: 0 0 10px 0; font-weight: 800; letter-spacing: -1px; font-size: 2rem; }
+        p.subtitle { color: var(--text-muted); font-size: 0.9rem; margin-top: -10px; margin-bottom: 20px; }
+        
+        /* Área de Texto */
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
         
         textarea {
-            width: 100%; height: 120px; background: #222; color: #ddd;
-            border: 1px solid #444; padding: 15px; font-size: 16px; border-radius: 8px;
-            font-family: monospace; resize: vertical;
+            width: 100%; height: 150px; background: var(--panel-bg); color: white;
+            border: 1px solid var(--border); padding: 15px; font-size: 16px; border-radius: 8px;
+            font-family: 'Inter', sans-serif; resize: vertical; outline: none; transition: border 0.2s;
         }
-        
-        .box { background: #1e1e1e; border-radius: 8px; padding: 15px; border: 1px solid #333; }
-        
-        label { display: flex; align-items: center; gap: 10px; color: #ccc; font-size: 16px; cursor: pointer; }
-        input[type="checkbox"] { transform: scale(1.3); margin: 0; }
-        input[type="number"] { padding: 10px; border-radius: 5px; border: none; background: #333; color: white; width: 80px; text-align: center; font-size: 16px; }
+        textarea:focus { border-color: var(--accent); }
 
-        /* Botões Iniciais */
+        /* Grid de Configurações */
+        .settings-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+        }
+        @media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
+
+        .control-box {
+            background: var(--panel-bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border);
+            display: flex; flex-direction: column; gap: 10px;
+        }
+
+        /* Sliders Modernos */
+        .range-wrapper { display: flex; align-items: center; gap: 10px; }
+        input[type="range"] { flex: 1; accent-color: var(--accent); cursor: pointer; }
+        .value-display { 
+            background: #000; padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; 
+            min-width: 35px; text-align: center; color: var(--accent); font-weight: bold;
+        }
+
+        /* Toggles (Switches) */
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .toggle-switch {
+            position: relative; width: 44px; height: 24px; background: #3f3f46; border-radius: 20px; transition: 0.3s;
+        }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 2px; left: 2px; width: 20px; height: 20px;
+            background: white; border-radius: 50%; transition: 0.3s;
+        }
+        input[type="checkbox"] { display: none; }
+        input[type="checkbox"]:checked + .toggle-switch { background: var(--accent); }
+        input[type="checkbox"]:checked + .toggle-switch::after { transform: translateX(20px); }
+
+        /* Botões Principais */
+        .action-buttons { display: flex; gap: 15px; margin-top: 10px; padding-bottom: 40px; }
         .btn {
-            padding: 18px; border: none; border-radius: 8px; cursor: pointer; 
-            font-size: 18px; font-weight: bold; width: 100%; text-transform: uppercase;
-            color: white; margin-top: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-            transition: transform 0.1s;
+            flex: 1; padding: 16px; border: none; border-radius: 8px; cursor: pointer; 
+            font-size: 1rem; font-weight: 700; text-transform: uppercase; color: white;
+            transition: transform 0.1s, opacity 0.2s;
         }
         .btn:active { transform: scale(0.98); }
-        .btn-start { background: linear-gradient(135deg, #28a745 0%, #218838 100%); margin-bottom: 30px; }
-        .btn-full { background: #17a2b8; margin-bottom: 10px; }
+        .btn-primary { background: var(--accent); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary { background: #3f3f46; }
 
-        /* --- TELA DE LEITURA --- */
+        /* --- TELA DE PROMPTER --- */
         #prompter-window {
             display: none; width: 100%; height: 100vh; position: relative;
             background: black; overflow: hidden;
-            cursor: pointer; 
         }
 
-        /* OVERLAY DE CONTAGEM REGRESSIVA */
+        /* Overlay de Contagem */
         #countdown-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.9); z-index: 200;
-            display: none; align-items: center; justify-content: center;
-            font-size: 180px; font-weight: bold; color: #28a745;
-            text-shadow: 0 0 30px #28a745;
+            background: rgba(0,0,0,0.95); z-index: 200;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
         }
+        #countdown-number {
+            font-size: 15vw; font-weight: 800; color: var(--accent);
+            text-shadow: 0 0 50px rgba(59, 130, 246, 0.5);
+        }
+        #countdown-label { font-size: 1.5rem; text-transform: uppercase; letter-spacing: 5px; color: white; margin-top: 20px; }
 
-        /* Container de Rolagem */
+        /* Área do Texto */
         #scrolling-content {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            overflow-y: auto; 
-            padding: 0; /* Padding removido aqui para usar margem no texto */
-            scroll-behavior: smooth;
+            overflow-y: auto; scroll-behavior: smooth;
         }
         #scrolling-content::-webkit-scrollbar { display: none; }
         
         #text-display {
-            padding-top: 40vh; padding-bottom: 60vh;
-            font-size: 55px; line-height: 1.4; 
-            
-            /* CENTRALIZAÇÃO E MARGENS */
-            text-align: center; /* Texto centralizado */
-            width: 80%; /* Ocupa apenas 80% da tela (cria margens laterais de 10%) */
-            margin: 0 auto; /* Centraliza o bloco na tela */
-            
-            font-weight: bold; max-width: 900px;
-            color: #444;
+            padding-top: 45vh; padding-bottom: 55vh;
+            text-align: center; /* Centralizado por padrão */
+            font-weight: 700; margin: 0 auto;
+            color: #333; /* Texto futuro apagado */
+            line-height: 1.4;
+            /* Margens dinâmicas serão aplicadas via JS */
         }
 
-        /* PALAVRAS */
-        .word { 
-            display: inline-block; 
-            margin-right: 0.15em; 
-            padding: 2px 0;
-            border-radius: 3px; 
-            transition: color 0.1s;
-        }
-        .word.read { color: #fff; opacity: 0.5; } 
+        /* Palavras */
+        .word { display: inline-block; margin-right: 0.15em; padding: 2px 0; border-radius: 4px; transition: color 0.1s; }
+        .word.read { color: white; opacity: 0.4; } 
         .word.current { 
-            color: #ffff00; 
-            text-shadow: 0 0 15px rgba(255,255,0,0.8);
-            border-bottom: 3px solid yellow; 
+            color: #fbbf24; /* Amarelo Ouro */
+            text-shadow: 0 0 20px rgba(251, 191, 36, 0.6);
+            border-bottom: 3px solid #fbbf24; 
         }
 
-        /* Marcador de Linha */
+        /* Marcador Central */
         #center-marker {
             position: fixed; top: 35%; left: 0; width: 100%; height: 2px;
-            background: rgba(255, 0, 0, 0.3); z-index: 20; pointer-events: none;
+            background: rgba(255, 255, 255, 0.1); z-index: 20; pointer-events: none;
+        }
+        #center-marker::before { 
+            content: "▶"; color: var(--accent); position: absolute; left: 10px; top: -11px; font-size: 14px; 
+        }
+        #center-marker::after { 
+            content: "◀"; color: var(--accent); position: absolute; right: 10px; top: -11px; font-size: 14px; 
         }
 
-        /* Status HUD (Transparente) */
+        /* HUD Status */
         #status-hud {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100;
-            background: rgba(0,0,0,0.5); color: white; padding: 5px 15px;
-            border-radius: 20px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2);
-            display: none; white-space: nowrap; pointer-events: none;
-            transition: opacity 0.5s;
+            position: fixed; top: 25px; left: 50%; transform: translateX(-50%); z-index: 100;
+            background: rgba(24, 24, 27, 0.8); color: white; padding: 6px 16px;
+            border-radius: 30px; font-size: 13px; font-weight: 600; 
+            border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);
+            display: none; pointer-events: none; transition: opacity 0.5s;
         }
-        #status-hud.voice { color: #0f0; } 
-        #status-hud.auto { color: #ff0; }   
-        #status-hud.paused { color: #f99; }
+        #status-hud.active { border-color: var(--accent); color: var(--accent); }
 
-        /* BARRA DE CONTROLES (Ghost Mode) */
+        /* Controles Fantasma (Ghost Controls) */
         #control-bar {
             position: fixed; bottom: 40px; left: 0; width: 100%;
             display: flex; justify-content: center; gap: 30px; z-index: 100;
-            transition: opacity 0.5s ease-in-out;
-            opacity: 1;
+            transition: opacity 0.5s ease;
         }
         .fade-out { opacity: 0 !important; pointer-events: none; }
 
-        .c-btn {
-            width: 65px; height: 65px; border-radius: 50%; 
-            background: rgba(255, 255, 255, 0.15); 
-            border: 1px solid rgba(255, 255, 255, 0.4); 
-            color: white; font-size: 24px; font-weight: bold; cursor: pointer;
-            backdrop-filter: blur(5px);
-            display: flex; align-items: center; justify-content: center;
+        .ghost-btn {
+            width: 60px; height: 60px; border-radius: 50%; 
+            background: rgba(255, 255, 255, 0.05); 
+            border: 1px solid rgba(255, 255, 255, 0.2); 
+            color: white; font-size: 22px; cursor: pointer;
+            backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center;
             transition: all 0.2s;
         }
-        .c-btn:hover { background: rgba(255, 255, 255, 0.3); transform: scale(1.1); }
-        .c-btn:active { transform: scale(0.95); }
+        .ghost-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.1); }
+        .ghost-btn:active { transform: scale(0.95); }
 
-        #btn-reset { color: #88f9ff; }
-        #btn-pause { color: #ffeeba; }
-        #btn-exit { color: #ffadad; }
+        /* Cores dos Ícones */
+        #btn-reset { color: #67e8f9; }  /* Ciano */
+        #btn-pause { color: #fcd34d; }  /* Amarelo */
+        #btn-exit { color: #fda4af; }   /* Rosa/Vermelho */
 
-        /* Espelhamento */
+        /* Utilitários de Espelhamento */
         .mirror-x { transform: scaleX(-1); }
         .mirror-y { transform: scaleY(-1); }
         .mirror-xy { transform: scale(-1, -1); }
@@ -146,47 +185,94 @@
 <body>
 
     <div id="setup-panel">
-        <h2>Teleprompter V14</h2>
-        <textarea id="input-text">Teste de margens e contagem.
-Ao iniciar, haverá uma contagem de 5 segundos.
-O texto está centralizado com margens laterais.
-Isso ajuda a manter os olhos no centro da tela.</textarea>
-        
-        <div class="box">
-            <label>
-                <input type="checkbox" id="check-voice" checked onclick="toggleWpmLabel()"> 
-                🎙️ Modo Híbrido (Eco)
-            </label>
+        <div>
+            <h1>Teleprompter Pro</h1>
+            <p class="subtitle">Estúdio de Leitura Inteligente com Controle de Voz</p>
         </div>
 
-        <div class="box" style="display:flex; justify-content: space-between; align-items: center;">
-            <div>
-                <label style="font-size:13px; margin-bottom:5px;" id="lbl-wpm">Velocidade (WPM)</label>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="number" id="wpm-speed" value="130">
+        <div class="input-group">
+            <label>Roteiro</label>
+            <textarea id="input-text" placeholder="Cole seu texto aqui...">Bem-vindo ao Teleprompter Pro.
+Ajuste as margens para centralizar o texto.
+Use o timer para se preparar.
+O sistema ouvirá sua voz e rolará automaticamente.</textarea>
+        </div>
+
+        <div class="settings-grid">
+            
+            <div class="control-box">
+                <label id="lbl-wpm">Velocidade (WPM)</label>
+                <div class="range-wrapper">
+                    <input type="range" id="wpm-speed" min="50" max="300" value="140" oninput="updateVal('disp-wpm', this.value)">
+                    <span id="disp-wpm" class="value-display">140</span>
                 </div>
             </div>
-            <div>
-                <label style="font-size:13px; margin-bottom:5px;">Tamanho Fonte</label>
-                <input type="number" id="font-size" value="60"> px
+
+            <div class="control-box">
+                <label>Tamanho da Fonte (PX)</label>
+                <div class="range-wrapper">
+                    <input type="range" id="font-size" min="30" max="120" value="65" oninput="updateVal('disp-font', this.value)">
+                    <span id="disp-font" class="value-display">65</span>
+                </div>
+            </div>
+
+            <div class="control-box">
+                <label>Margem Lateral (%)</label>
+                <div class="range-wrapper">
+                    <input type="range" id="margin-size" min="0" max="40" value="15" oninput="updateVal('disp-margin', this.value + '%')">
+                    <span id="disp-margin" class="value-display">15%</span>
+                </div>
+            </div>
+
+            <div class="control-box">
+                <label>Timer Inicial (Segundos)</label>
+                <div class="range-wrapper">
+                    <input type="range" id="countdown-time" min="0" max="30" value="5" oninput="updateVal('disp-time', this.value + 's')">
+                    <span id="disp-time" class="value-display">5s</span>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="settings-grid">
+            <div class="control-box">
+                <label class="toggle-row">
+                    <span>🎙️ Modo Híbrido (Voz + Auto)</span>
+                    <input type="checkbox" id="check-voice" checked onclick="toggleLabel()">
+                    <div class="toggle-switch"></div>
+                </label>
+            </div>
+            
+            <div class="control-box">
+                <div style="display:flex; justify-content:space-between;">
+                    <label class="toggle-row" style="margin-right:15px;">
+                        <span>Espelhar X</span>
+                        <input type="checkbox" id="check-mirror-x">
+                        <div class="toggle-switch" style="transform:scale(0.8);"></div>
+                    </label>
+                    <label class="toggle-row">
+                        <span>Espelhar Y</span>
+                        <input type="checkbox" id="check-mirror-y">
+                        <div class="toggle-switch" style="transform:scale(0.8);"></div>
+                    </label>
+                </div>
             </div>
         </div>
 
-        <div class="box">
-            <div style="display:flex; gap:20px;">
-                <label><input type="checkbox" id="check-mirror-x"> Espelhar X</label>
-                <label><input type="checkbox" id="check-mirror-y"> Espelhar Y</label>
-            </div>
+        <div class="action-buttons">
+            <button class="btn btn-secondary" onclick="forceFullScreen()">⛶ Tela Cheia</button>
+            <button class="btn btn-primary" onclick="initPrompter()">INICIAR ▶</button>
         </div>
-
-        <button class="btn btn-full" onclick="forceFullScreen()">⛶ TELA CHEIA</button>
-        <button class="btn btn-start" onclick="initPrompter()">INICIAR ▶</button>
     </div>
 
     <div id="prompter-window" onclick="userInteracted()">
-        <div id="countdown-overlay">5</div>
         
-        <div id="status-hud">Inicializando...</div>
+        <div id="countdown-overlay">
+            <div id="countdown-number">5</div>
+            <div id="countdown-label">Prepare-se</div>
+        </div>
+
+        <div id="status-hud">Pronto</div>
         
         <div id="scrolling-content">
             <div id="text-display"></div>
@@ -195,33 +281,40 @@ Isso ajuda a manter os olhos no centro da tela.</textarea>
         <div id="center-marker"></div>
         
         <div id="control-bar">
-            <button id="btn-reset" class="c-btn" onclick="resetPrompter(); event.stopPropagation();">↺</button>
-            <button id="btn-pause" class="c-btn" onclick="togglePause(); event.stopPropagation();">⏸</button>
-            <button id="btn-exit" class="c-btn" onclick="stopPrompter(); event.stopPropagation();">✕</button>
+            <button id="btn-reset" class="ghost-btn" onclick="triggerReset(); event.stopPropagation();">↺</button>
+            <button id="btn-pause" class="ghost-btn" onclick="togglePause(); event.stopPropagation();">⏸</button>
+            <button id="btn-exit" class="ghost-btn" onclick="stopPrompter(); event.stopPropagation();">✕</button>
         </div>
     </div>
 
     <script>
+        // --- HELPERS VISUAIS ---
+        function updateVal(id, val) { document.getElementById(id).innerText = val; }
+        function toggleLabel() {
+            const checked = document.getElementById('check-voice').checked;
+            document.getElementById('lbl-wpm').innerText = checked ? "Velocidade Resgate (WPM)" : "Velocidade Rolagem (WPM)";
+        }
+
         // --- GLOBAIS ---
         let recognition;
         let allWordsElements = [];
         let currentWordIndex = -1;
         
+        // Configurações
+        let config = {
+            wpm: 140,
+            margin: 15,
+            countdown: 5,
+            hybrid: true
+        };
+
         // Estados
-        let isHybridMode = true; 
-        let targetWPM = 140;
         let autoScrollInterval = null;
         let lastVoiceTime = 0;
         let silenceCheckInterval = null;
         let isAutoPiloting = false;
         let isGlobalPaused = false;
         let inactivityTimer = null;
-
-        // --- UI ---
-        function toggleWpmLabel() {
-            const checked = document.getElementById('check-voice').checked;
-            document.getElementById('lbl-wpm').innerText = checked ? "Velocidade Resgate" : "Velocidade Rolagem";
-        }
 
         function forceFullScreen() {
             const elem = document.documentElement;
@@ -231,43 +324,24 @@ Isso ajuda a manter os olhos no centro da tela.</textarea>
             } catch (err) {}
         }
 
-        function updateHud(text, type) {
-            const hud = document.getElementById('status-hud');
-            hud.innerText = text;
-            hud.className = type;
-            hud.style.display = 'block';
-            hud.style.opacity = 1; 
-        }
-
-        function userInteracted() {
-            const bar = document.getElementById('control-bar');
-            const hud = document.getElementById('status-hud');
-            bar.classList.remove('fade-out');
-            hud.style.opacity = 1;
-            clearTimeout(inactivityTimer);
-            
-            if (!isGlobalPaused) {
-                inactivityTimer = setTimeout(() => {
-                    bar.classList.add('fade-out');
-                    hud.style.opacity = 0.3; 
-                }, 3000); 
-            }
-        }
-
         // --- INICIALIZAÇÃO ---
         function initPrompter() {
             forceFullScreen();
-
+            
+            // 1. Ler Configurações
             const rawText = document.getElementById('input-text').value;
             const fontSize = document.getElementById('font-size').value;
-            targetWPM = parseInt(document.getElementById('wpm-speed').value) || 140;
-            isHybridMode = document.getElementById('check-voice').checked;
+            config.wpm = parseInt(document.getElementById('wpm-speed').value);
+            config.margin = parseInt(document.getElementById('margin-size').value);
+            config.countdown = parseInt(document.getElementById('countdown-time').value);
+            config.hybrid = document.getElementById('check-voice').checked;
+            
             const mirrorX = document.getElementById('check-mirror-x').checked;
             const mirrorY = document.getElementById('check-mirror-y').checked;
 
-            if (!rawText.trim()) return alert("Digite um texto!");
+            if (!rawText.trim()) return alert("O roteiro está vazio!");
 
-            // Formatação
+            // 2. Preparar Texto (Bloco Contínuo)
             const continuousText = rawText.replace(/\n/g, " ").replace(/\s+/g, " ");
             const words = continuousText.split(" ");
             
@@ -280,9 +354,14 @@ Isso ajuda a manter os olhos no centro da tela.</textarea>
             const textBox = document.getElementById('text-display');
             textBox.innerHTML = htmlHTML;
             textBox.style.fontSize = fontSize + "px";
+            
+            // APLICAR MARGENS (Padding dinâmico)
+            textBox.style.paddingLeft = config.margin + "%";
+            textBox.style.paddingRight = config.margin + "%";
+
             allWordsElements = Array.from(document.querySelectorAll('.word'));
 
-            // Espelhamento
+            // 3. Preparar Janela
             const win = document.getElementById('prompter-window');
             win.className = "";
             if (mirrorX && mirrorY) win.classList.add('mirror-xy');
@@ -292,48 +371,98 @@ Isso ajuda a manter os olhos no centro da tela.</textarea>
             document.getElementById('setup-panel').style.display = 'none';
             win.style.display = 'block';
 
-            // INICIAR CONTAGEM REGRESSIVA
-            startCountdown();
+            // 4. Iniciar Processo
+            startCountdownSequence();
         }
 
-        function startCountdown() {
-            const overlay = document.getElementById('countdown-overlay');
-            overlay.style.display = 'flex';
-            let count = 5;
-            overlay.innerText = count;
+        // --- SEQUÊNCIA DE CONTAGEM REGRESSIVA ---
+        function startCountdownSequence() {
+            // Se o tempo for 0, pula direto
+            if (config.countdown <= 0) {
+                beginReading();
+                return;
+            }
 
-            // Bloqueia interações durante contagem
-            isGlobalPaused = true; 
+            const overlay = document.getElementById('countdown-overlay');
+            const numDisplay = document.getElementById('countdown-number');
+            overlay.style.display = 'flex';
+            
+            let count = config.countdown;
+            numDisplay.innerText = count;
+            
+            // Pausa lógica interna
+            isGlobalPaused = true;
 
             const timer = setInterval(() => {
                 count--;
-                if(count > 0) {
-                    overlay.innerText = count;
+                if (count > 0) {
+                    numDisplay.innerText = count;
                 } else {
                     clearInterval(timer);
                     overlay.style.display = 'none';
-                    
-                    // Começa de verdade
-                    resetVariables(); // Libera o pause e zera tudo
-                    if (isHybridMode) {
-                        startVoiceEngine(); 
-                        startSilenceWatcher();
-                    } else {
-                        startManualAutoScroll();
-                    }
-                    userInteracted();
+                    beginReading();
                 }
             }, 1000);
+        }
+
+        function beginReading() {
+            resetVariables(); // Reseta índices e estados
+            isGlobalPaused = false; // Libera sistema
+            
+            if (config.hybrid) {
+                startVoiceEngine();
+                startSilenceWatcher();
+            } else {
+                startManualAutoScroll();
+            }
+            userInteracted(); // Mostra controles inicialmente
+            updateHud("No Ar", "active");
         }
 
         function resetVariables() {
             currentWordIndex = -1;
             lastVoiceTime = Date.now();
             isAutoPiloting = false;
-            isGlobalPaused = false;
             document.getElementById('btn-pause').innerText = "⏸";
+            
+            // Limpa estilos
             allWordsElements.forEach(el => el.classList.remove('current', 'read'));
             document.getElementById('scrolling-content').scrollTo(0,0);
+        }
+
+        // --- LÓGICA DE RESET COM TIMER ---
+        function triggerReset() {
+            // Para tudo
+            if (autoScrollInterval) clearInterval(autoScrollInterval);
+            if (silenceCheckInterval) clearInterval(silenceCheckInterval);
+            if (recognition) try { recognition.stop(); } catch(e){}
+
+            // Chama o countdown novamente
+            startCountdownSequence();
+        }
+
+        // --- SISTEMA DE PAUSA ---
+        function togglePause() {
+            isGlobalPaused = !isGlobalPaused;
+            const btn = document.getElementById('btn-pause');
+            
+            if (isGlobalPaused) {
+                btn.innerText = "▶";
+                updateHud("PAUSADO", "");
+                if (autoScrollInterval) clearInterval(autoScrollInterval);
+                if (recognition) try { recognition.stop(); } catch(e){}
+                
+                // Mantém controles visíveis na pausa
+                clearTimeout(inactivityTimer);
+                document.getElementById('control-bar').classList.remove('fade-out');
+            } else {
+                btn.innerText = "⏸";
+                updateHud("Retomando...", "active");
+                lastVoiceTime = Date.now();
+                if (config.hybrid) try { recognition.start(); } catch(e){}
+                else startManualAutoScroll();
+                userInteracted();
+            }
         }
 
         function stopPrompter() {
@@ -345,49 +474,32 @@ Isso ajuda a manter os olhos no centro da tela.</textarea>
             document.getElementById('setup-panel').style.display = 'flex';
         }
 
-        // --- CONTROLES ---
-        function togglePause() {
-            isGlobalPaused = !isGlobalPaused;
-            const btn = document.getElementById('btn-pause');
-            
-            if (isGlobalPaused) {
-                btn.innerText = "▶";
-                updateHud("⏸ PAUSADO", "paused");
-                if (autoScrollInterval) clearInterval(autoScrollInterval);
-                if (recognition) try { recognition.stop(); } catch(e){}
-                clearTimeout(inactivityTimer);
-                document.getElementById('control-bar').classList.remove('fade-out');
-            } else {
-                btn.innerText = "⏸";
-                updateHud("▶ Retomando...", "voice");
-                lastVoiceTime = Date.now();
-                if (isHybridMode) try { recognition.start(); } catch(e){}
-                else startManualAutoScroll();
-                userInteracted();
-            }
+        // --- GESTÃO DE VISIBILIDADE HUD ---
+        function updateHud(text, activeClass) {
+            const hud = document.getElementById('status-hud');
+            hud.innerText = text;
+            hud.className = activeClass ? 'active' : '';
+            hud.style.opacity = 1;
         }
 
-        function resetPrompter() {
-            if (autoScrollInterval) clearInterval(autoScrollInterval);
-            // Ao resetar, fazemos a contagem de novo? Geralmente não, volta direto ao topo pronto pra ler.
-            // Mas resetamos as variáveis
-            currentWordIndex = -1;
-            allWordsElements.forEach(el => el.classList.remove('current', 'read'));
-            document.getElementById('scrolling-content').scrollTo(0,0);
+        function userInteracted() {
+            const bar = document.getElementById('control-bar');
+            const hud = document.getElementById('status-hud');
+            bar.classList.remove('fade-out');
+            hud.style.opacity = 1;
             
-            updateHud("↺ Reiniciado", "voice");
-            
-            // Mantém estado de pausa se estava pausado
+            clearTimeout(inactivityTimer);
             if (!isGlobalPaused) {
-                lastVoiceTime = Date.now();
-                isAutoPiloting = false;
-                if(!isHybridMode) setTimeout(startManualAutoScroll, 1000);
+                inactivityTimer = setTimeout(() => {
+                    bar.classList.add('fade-out');
+                    hud.style.opacity = 0; 
+                }, 3000);
             }
         }
 
-        // --- AUTO SCROLL ---
+        // --- ENGINES (Cópia da lógica robusta V14) ---
         function startManualAutoScroll() {
-            updateHud("Auto Scroll", "auto");
+            updateHud("Auto Scroll", "active");
             runAutoScrollLoop();
         }
 
@@ -398,14 +510,14 @@ Isso ajuda a manter os olhos no centro da tela.</textarea>
                 const timeSinceVoice = Date.now() - lastVoiceTime;
                 if (timeSinceVoice > 2000 && !isAutoPiloting) {
                     isAutoPiloting = true;
-                    updateHud("⚠️ Resgate Automático", "auto");
+                    updateHud("Auto Resgate", "active");
                     runAutoScrollLoop();
                 }
             }, 200);
         }
 
         function runAutoScrollLoop() {
-            const msPerWord = 60000 / targetWPM;
+            const msPerWord = 60000 / config.wpm;
             if (autoScrollInterval) clearInterval(autoScrollInterval);
             autoScrollInterval = setInterval(() => {
                 if (isGlobalPaused) return;
@@ -418,10 +530,7 @@ Isso ajuda a manter os olhos no centro da tela.</textarea>
             }, msPerWord);
         }
 
-        // --- VOZ ---
         function startVoiceEngine() {
-            const hud = document.getElementById('status-hud');
-            hud.style.display = 'block';
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) return;
 
@@ -453,8 +562,6 @@ Isso ajuda a manter os olhos no centro da tela.</textarea>
 
         function findWordStrict(spokenWord) {
             const cleanSpoken = spokenWord.replace(/[^\wÀ-ÿ]/g, "");
-            
-            // --- HORIZONTE DE 5 PALAVRAS ---
             const LOOK_AHEAD_LIMIT = 5; 
             
             const startSearch = currentWordIndex + 1;
@@ -467,7 +574,7 @@ Isso ajuda a manter os olhos no centro da tela.</textarea>
                         isAutoPiloting = false;
                         clearInterval(autoScrollInterval);
                     }
-                    updateHud("🎤 Ouvindo...", "voice");
+                    updateHud("Ouvindo...", "active");
                     currentWordIndex = i;
                     highlightAndScroll(i);
                     break;
@@ -475,7 +582,6 @@ Isso ajuda a manter os olhos no centro da tela.</textarea>
             }
         }
 
-        // --- VISUAL ---
         function highlightAndScroll(index) {
             for(let i = index - 1; i >= Math.max(0, index - 5); i--) {
                 allWordsElements[i].classList.remove('current');
