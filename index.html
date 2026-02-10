@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Teleprompter V12 - Trilho Blindado</title>
+    <title>Teleprompter V13 - Cinema</title>
     <style>
         /* --- ESTILO GERAL --- */
         body { margin: 0; background-color: #000; color: white; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
@@ -44,13 +44,14 @@
         #prompter-window {
             display: none; width: 100%; height: 100vh; position: relative;
             background: black; overflow: hidden;
+            cursor: pointer; /* Indica que é clicável para mostrar menus */
         }
 
         /* Container de Rolagem */
         #scrolling-content {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            overflow-y: auto; padding: 0 20px; /* Margem lateral */
-            scroll-behavior: smooth; /* O segredo do deslizamento */
+            overflow-y: auto; padding: 0 20px;
+            scroll-behavior: smooth;
         }
         #scrolling-content::-webkit-scrollbar { display: none; }
         
@@ -62,60 +63,66 @@
             color: #444;
         }
 
-        /* PALAVRAS (Espaçamento Reduzido) */
+        /* PALAVRAS */
         .word { 
             display: inline-block; 
-            margin-right: 0.15em; /* Espaço bem curto entre palavras */
+            margin-right: 0.15em; 
             padding: 2px 0;
             border-radius: 3px; 
-            transition: color 0.1s, background 0.1s;
+            transition: color 0.1s;
         }
         .word.read { color: #fff; opacity: 0.5; } 
-        
         .word.current { 
             color: #ffff00; 
-            /* background: rgba(255, 255, 0, 0.2); REMOVIDO FUNDO PARA FICAR MAIS LIMPO */
             text-shadow: 0 0 15px rgba(255,255,0,0.8);
-            border-bottom: 3px solid yellow; /* Sublinhado forte */
+            border-bottom: 3px solid yellow; 
         }
 
         /* Marcador de Linha */
         #center-marker {
             position: fixed; top: 35%; left: 0; width: 100%; height: 2px;
-            background: rgba(255, 0, 0, 0.5); z-index: 20; pointer-events: none;
+            background: rgba(255, 0, 0, 0.3); z-index: 20; pointer-events: none;
         }
-        #center-marker::before { content: "▼ LEITURA"; color: red; position: absolute; left: 10px; top: -15px; font-size: 10px; font-weight:bold; letter-spacing: 2px; }
 
-        /* Status HUD */
+        /* Status HUD (Transparente) */
         #status-hud {
-            position: fixed; top: 15px; left: 50%; transform: translateX(-50%); z-index: 100;
-            background: rgba(0,0,0,0.8); color: white; padding: 5px 15px;
-            border-radius: 20px; font-size: 14px; border: 1px solid #555;
-            display: none; white-space: nowrap;
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 100;
+            background: rgba(0,0,0,0.5); color: white; padding: 5px 15px;
+            border-radius: 20px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2);
+            display: none; white-space: nowrap; pointer-events: none;
+            transition: opacity 0.5s;
         }
-        #status-hud.voice { border-color: #0f0; color: #0f0; } 
-        #status-hud.auto { border-color: #ff0; color: #ff0; }   
-        #status-hud.paused { border-color: #f00; color: #f00; }
+        #status-hud.voice { color: #0f0; } 
+        #status-hud.auto { color: #ff0; }   
+        #status-hud.paused { color: #f99; }
 
-        /* BARRA DE CONTROLES INFERIOR */
+        /* BARRA DE CONTROLES (Ghost Mode) */
         #control-bar {
-            position: fixed; bottom: 30px; left: 0; width: 100%;
-            display: flex; justify-content: center; gap: 25px; z-index: 100;
-            pointer-events: none; 
+            position: fixed; bottom: 40px; left: 0; width: 100%;
+            display: flex; justify-content: center; gap: 30px; z-index: 100;
+            transition: opacity 0.5s ease-in-out; /* O segredo do Fade */
+            opacity: 1;
         }
         
-        .c-btn {
-            pointer-events: auto;
-            width: 70px; height: 70px; border-radius: 50%; border: none;
-            color: white; font-size: 28px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
-            transition: transform 0.1s; border: 2px solid rgba(255,255,255,0.2);
-        }
-        .c-btn:active { transform: scale(0.9); }
+        /* Classe para esconder */
+        .fade-out { opacity: 0 !important; pointer-events: none; }
 
-        #btn-reset { background: #17a2b8; }
-        #btn-pause { background: #ffc107; color: black; }
-        #btn-exit { background: #dc3545; }
+        .c-btn {
+            width: 65px; height: 65px; border-radius: 50%; 
+            background: rgba(255, 255, 255, 0.15); /* Fundo Transparente */
+            border: 1px solid rgba(255, 255, 255, 0.4); /* Borda Fina */
+            color: white; font-size: 24px; font-weight: bold; cursor: pointer;
+            backdrop-filter: blur(5px); /* Efeito Vidro */
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s;
+        }
+        .c-btn:hover { background: rgba(255, 255, 255, 0.3); transform: scale(1.1); }
+        .c-btn:active { transform: scale(0.95); }
+
+        /* Cores leves no ícone ao invés do fundo */
+        #btn-reset { color: #88f9ff; }
+        #btn-pause { color: #ffeeba; }
+        #btn-exit { color: #ffadad; }
 
         /* Espelhamento */
         .mirror-x { transform: scaleX(-1); }
@@ -127,17 +134,16 @@
 <body>
 
     <div id="setup-panel">
-        <h2>Teleprompter V12 - Trilho</h2>
-        <textarea id="input-text">Teste de trilho.
-Ele vai ler palavra por palavra.
-Se houver uma palavra repetida na linha de baixo ele ignora.
-Só passa para a próxima linha quando terminar a atual.
-Pode pausar e continuar do mesmo ponto.</textarea>
+        <h2>Teleprompter V13</h2>
+        <textarea id="input-text">Teste de botões transparentes.
+Toque na tela para fazer os botões aparecerem.
+Espere 3 segundos e eles somem.
+Ao pausar, o microfone desliga para economizar bateria.</textarea>
         
         <div class="box">
             <label>
                 <input type="checkbox" id="check-voice" checked onclick="toggleWpmLabel()"> 
-                🎙️ Modo Híbrido (Voz + Resgate)
+                🎙️ Modo Híbrido (Eco)
             </label>
         </div>
 
@@ -165,7 +171,7 @@ Pode pausar e continuar do mesmo ponto.</textarea>
         <button class="btn btn-start" onclick="initPrompter()">INICIAR ▶</button>
     </div>
 
-    <div id="prompter-window">
+    <div id="prompter-window" onclick="userInteracted()">
         <div id="status-hud">Inicializando...</div>
         
         <div id="scrolling-content">
@@ -175,9 +181,9 @@ Pode pausar e continuar do mesmo ponto.</textarea>
         <div id="center-marker"></div>
         
         <div id="control-bar">
-            <button id="btn-reset" class="c-btn" onclick="resetPrompter()">↺</button>
-            <button id="btn-pause" class="c-btn" onclick="togglePause()">⏸</button>
-            <button id="btn-exit" class="c-btn" onclick="stopPrompter()">✕</button>
+            <button id="btn-reset" class="c-btn" onclick="resetPrompter(); event.stopPropagation();">↺</button>
+            <button id="btn-pause" class="c-btn" onclick="togglePause(); event.stopPropagation();">⏸</button>
+            <button id="btn-exit" class="c-btn" onclick="stopPrompter(); event.stopPropagation();">✕</button>
         </div>
     </div>
 
@@ -185,7 +191,7 @@ Pode pausar e continuar do mesmo ponto.</textarea>
         // --- GLOBAIS ---
         let recognition;
         let allWordsElements = [];
-        let currentWordIndex = -1; // -1 significa que ainda não leu a primeira
+        let currentWordIndex = -1;
         
         // Estados
         let isHybridMode = true; 
@@ -195,6 +201,9 @@ Pode pausar e continuar do mesmo ponto.</textarea>
         let silenceCheckInterval = null;
         let isAutoPiloting = false;
         let isGlobalPaused = false;
+        
+        // Timer de Fade
+        let inactivityTimer = null;
 
         // --- UI ---
         function toggleWpmLabel() {
@@ -215,6 +224,28 @@ Pode pausar e continuar do mesmo ponto.</textarea>
             hud.innerText = text;
             hud.className = type;
             hud.style.display = 'block';
+            hud.style.opacity = 1; // Garante visibilidade
+        }
+
+        // --- GESTÃO DE VISIBILIDADE (AUTO-HIDE) ---
+        function userInteracted() {
+            const bar = document.getElementById('control-bar');
+            const hud = document.getElementById('status-hud');
+            
+            // Mostra
+            bar.classList.remove('fade-out');
+            hud.style.opacity = 1;
+
+            // Reinicia timer
+            clearTimeout(inactivityTimer);
+            
+            // Só esconde se NÃO estiver pausado. Se pausado, mantém botões visíveis.
+            if (!isGlobalPaused) {
+                inactivityTimer = setTimeout(() => {
+                    bar.classList.add('fade-out');
+                    hud.style.opacity = 0.3; // HUD fica bem clarinho
+                }, 3000); // 3 segundos
+            }
         }
 
         // --- INICIALIZAÇÃO ---
@@ -230,7 +261,7 @@ Pode pausar e continuar do mesmo ponto.</textarea>
 
             if (!rawText.trim()) return alert("Digite um texto!");
 
-            // FORMATAÇÃO ESTRITA
+            // Formatação
             const continuousText = rawText.replace(/\n/g, " ").replace(/\s+/g, " ");
             const words = continuousText.split(" ");
             
@@ -260,11 +291,14 @@ Pode pausar e continuar do mesmo ponto.</textarea>
 
             // Iniciar
             if (isHybridMode) {
-                startVoiceEngine();
+                startVoiceEngine(); // Liga o Mic
                 startSilenceWatcher();
             } else {
                 startManualAutoScroll();
             }
+            
+            // Inicia timer de esconder botões
+            userInteracted();
         }
 
         function resetVariables() {
@@ -273,8 +307,6 @@ Pode pausar e continuar do mesmo ponto.</textarea>
             isAutoPiloting = false;
             isGlobalPaused = false;
             document.getElementById('btn-pause').innerText = "⏸";
-            
-            // Limpa visual
             allWordsElements.forEach(el => el.classList.remove('current', 'read'));
             document.getElementById('scrolling-content').scrollTo(0,0);
         }
@@ -283,26 +315,48 @@ Pode pausar e continuar do mesmo ponto.</textarea>
             if (recognition) try { recognition.stop(); } catch(e){}
             clearInterval(autoScrollInterval);
             clearInterval(silenceCheckInterval);
+            clearTimeout(inactivityTimer);
             document.getElementById('prompter-window').style.display = 'none';
             document.getElementById('setup-panel').style.display = 'flex';
         }
 
-        // --- CONTROLES DE PAUSA E RESET ---
+        // --- CONTROLES DE PAUSA E ENERGIA ---
         function togglePause() {
             isGlobalPaused = !isGlobalPaused;
             const btn = document.getElementById('btn-pause');
             
             if (isGlobalPaused) {
+                // PAUSA ATIVADA
                 btn.innerText = "▶";
-                updateHud("⏸ PAUSADO", "paused");
+                updateHud("⏸ PAUSADO (Mic Off)", "paused");
+                
+                // 1. Para Scroll
                 if (autoScrollInterval) clearInterval(autoScrollInterval);
+                
+                // 2. DESLIGA MICROFONE (Economia de Bateria)
+                if (recognition) {
+                    try { recognition.stop(); } catch(e){}
+                }
+
+                // 3. Mantém botões visíveis
+                clearTimeout(inactivityTimer);
+                document.getElementById('control-bar').classList.remove('fade-out');
+
             } else {
+                // RETOMAR
                 btn.innerText = "⏸";
                 updateHud("▶ Retomando...", "voice");
                 lastVoiceTime = Date.now();
                 
-                // Se for manual, retoma o scroll
-                if (!isHybridMode) startManualAutoScroll();
+                // 1. RELIGA MICROFONE (Se for modo híbrido)
+                if (isHybridMode) {
+                    try { recognition.start(); } catch(e){}
+                } else {
+                    startManualAutoScroll();
+                }
+
+                // 2. Reativa timer de esconder botões
+                userInteracted();
             }
         }
 
@@ -310,12 +364,15 @@ Pode pausar e continuar do mesmo ponto.</textarea>
             if (autoScrollInterval) clearInterval(autoScrollInterval);
             resetVariables();
             updateHud("↺ Reiniciado", "voice");
-            if (!isHybridMode && !isGlobalPaused) {
-                setTimeout(startManualAutoScroll, 1000);
+            
+            // Se resetar enquanto pausado, mantém pausado.
+            // Se resetar rodando, retoma.
+            if (!isGlobalPaused) {
+                if(!isHybridMode) setTimeout(startManualAutoScroll, 1000);
             }
         }
 
-        // --- AUTO SCROLL (RESGATE) ---
+        // --- AUTO SCROLL ---
         function startManualAutoScroll() {
             updateHud("Auto Scroll", "auto");
             runAutoScrollLoop();
@@ -324,10 +381,9 @@ Pode pausar e continuar do mesmo ponto.</textarea>
         function startSilenceWatcher() {
             if (silenceCheckInterval) clearInterval(silenceCheckInterval);
             silenceCheckInterval = setInterval(() => {
-                if (isGlobalPaused) return;
+                if (isGlobalPaused) return; 
 
                 const timeSinceVoice = Date.now() - lastVoiceTime;
-                
                 if (timeSinceVoice > 2000 && !isAutoPiloting) {
                     isAutoPiloting = true;
                     updateHud("⚠️ Resgate Automático", "auto");
@@ -342,7 +398,6 @@ Pode pausar e continuar do mesmo ponto.</textarea>
             
             autoScrollInterval = setInterval(() => {
                 if (isGlobalPaused) return;
-
                 if (currentWordIndex < allWordsElements.length - 1) {
                     currentWordIndex++;
                     highlightAndScroll(currentWordIndex);
@@ -352,7 +407,7 @@ Pode pausar e continuar do mesmo ponto.</textarea>
             }, msPerWord);
         }
 
-        // --- VOZ (LÓGICA DO TRILHO / TRACK LOGIC) ---
+        // --- VOZ ---
         function startVoiceEngine() {
             const hud = document.getElementById('status-hud');
             hud.style.display = 'block';
@@ -367,7 +422,8 @@ Pode pausar e continuar do mesmo ponto.</textarea>
             recognition.maxAlternatives = 1;
 
             recognition.onend = () => {
-                if (document.getElementById('prompter-window').style.display === 'block') {
+                // SÓ RELIGA SE NÃO ESTIVER PAUSADO GLOBALMENTE
+                if (document.getElementById('prompter-window').style.display === 'block' && !isGlobalPaused) {
                     try { recognition.start(); } catch(e){}
                 }
             };
@@ -381,8 +437,6 @@ Pode pausar e continuar do mesmo ponto.</textarea>
                 const lastSpokenWord = spokenWords[spokenWords.length - 1];
 
                 if (!lastSpokenWord) return;
-                
-                // Executa a busca estrita
                 findWordStrict(lastSpokenWord);
             };
 
@@ -392,26 +446,13 @@ Pode pausar e continuar do mesmo ponto.</textarea>
         function findWordStrict(spokenWord) {
             const cleanSpoken = spokenWord.replace(/[^\wÀ-ÿ]/g, "");
             
-            // --- AQUI ESTÁ O SEGREDO DO "SLIDING" ---
-            // Em vez de olhar 20 palavras à frente, olhamos APENAS 3.
-            // i+1 (A próxima imediata)
-            // i+2 (Caso o microfone tenha "comido" uma preposição curta)
-            // i+3 (Limite máximo de segurança)
-            
-            // Isso impede matematicamente que ele pule para outra linha,
-            // pois 3 palavras nunca são suficientes para pular uma linha inteira
-            // num teleprompter normal.
-            
+            // LOOK AHEAD LIMITADO (TRILHO)
             const LOOK_AHEAD_LIMIT = 3; 
-            
             const startSearch = currentWordIndex + 1;
-            // Garante que não busca além do final do array
             const endSearch = Math.min(startSearch + LOOK_AHEAD_LIMIT, allWordsElements.length);
             
             for (let i = startSearch; i < endSearch; i++) {
                 if (allWordsElements[i].dataset.clean === cleanSpoken) {
-                    
-                    // MATCH!
                     lastVoiceTime = Date.now();
                     
                     if (isAutoPiloting) {
@@ -422,36 +463,25 @@ Pode pausar e continuar do mesmo ponto.</textarea>
 
                     currentWordIndex = i;
                     highlightAndScroll(i);
-                    break; // Achou a próxima? Para imediatamente. Não procura mais longe.
+                    break;
                 }
             }
-            // Se não achou nas próximas 3, NÃO FAZ NADA.
-            // O Auto-Scroll vai entrar em 2 segundos e empurrar o texto.
         }
 
-        // --- VISUAL DESLIZANTE ---
+        // --- VISUAL ---
         function highlightAndScroll(index) {
-            // Limpeza Visual (Marca passados como lidos)
-            // Para garantir que a linha anterior fique branca, marcamos todos para trás
-            // Em um loop reverso curto para performance
+            // Limpa anteriores
             for(let i = index - 1; i >= Math.max(0, index - 5); i--) {
                 allWordsElements[i].classList.remove('current');
                 allWordsElements[i].classList.add('read');
             }
 
-            // Marca atual
             const el = allWordsElements[index];
             if (el) {
                 el.classList.add('current');
-                
-                // SCROLL SUAVE PARA LINHA VERMELHA (35%)
                 const container = document.getElementById('scrolling-content');
                 const target = el.offsetTop - (window.innerHeight * 0.35);
-                
-                container.scrollTo({
-                    top: target,
-                    behavior: 'smooth' // CSS trata a suavidade
-                });
+                container.scrollTo({ top: target, behavior: 'smooth' });
             }
         }
     </script>
