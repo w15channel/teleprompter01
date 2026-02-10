@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Teleprompter Hybrid PRO</title>
+    <title>Teleprompter Blindado v10</title>
     <style>
         /* --- ESTILO GERAL --- */
         body { margin: 0; background-color: #000; color: white; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
@@ -50,51 +50,51 @@
         #scrolling-content {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             overflow-y: auto; padding: 0 30px;
-            scroll-behavior: smooth; /* Suavidade nativa */
+            scroll-behavior: smooth;
         }
         /* Esconde barra de rolagem */
         #scrolling-content::-webkit-scrollbar { display: none; }
         
         #text-display {
             padding-top: 40vh; padding-bottom: 60vh;
-            font-size: 50px; line-height: 1.6; 
-            text-align: justify; /* Texto justificado como bloco */
+            font-size: 55px; line-height: 1.6; 
+            text-align: justify; /* Texto em bloco contínuo */
             font-weight: bold; margin: 0 auto; max-width: 900px;
-            color: #555; /* Texto futuro mais apagado */
+            color: #444; /* Futuro apagado */
         }
 
         /* Palavras */
         .word { 
-            display: inline; /* Continuidade */
-            padding: 2px 0; border-radius: 2px; transition: color 0.2s;
+            display: inline; padding: 2px 0; border-radius: 2px; transition: color 0.1s;
         }
-        .word.read { color: #fff; opacity: 0.5; } /* Passado */
+        .word.read { color: #fff; opacity: 0.6; } /* Passado */
         
-        /* Palavra Atual (Karaoke) */
+        /* Palavra Atual */
         .word.current { 
             color: #ffff00; /* Amarelo */
-            background: rgba(255, 255, 0, 0.2);
-            text-shadow: 0 0 10px yellow;
+            background: rgba(255, 255, 0, 0.25);
+            text-shadow: 0 0 15px rgba(255, 255, 0, 0.8);
+            border-bottom: 2px solid yellow; /* Marcador extra */
         }
 
-        /* Marcador Vermelho */
+        /* Marcador de Linha Vermelha */
         #center-marker {
             position: fixed; top: 35%; left: 0; width: 100%; height: 2px;
-            background: rgba(255, 0, 0, 0.4); z-index: 20; pointer-events: none;
+            background: rgba(255, 0, 0, 0.5); z-index: 20; pointer-events: none;
         }
-        #center-marker::after { content: "▼"; color: red; position: absolute; right: 10px; top: -10px; font-size: 12px; }
+        #center-marker::before { content: "▼ LEITURA"; color: red; position: absolute; left: 10px; top: -15px; font-size: 10px; font-weight:bold; letter-spacing: 2px; }
 
         /* Status Voz */
         #status-hud {
             position: fixed; top: 15px; right: 15px; z-index: 100;
-            background: rgba(0,0,0,0.8); color: white; padding: 5px 12px;
-            border-radius: 15px; font-size: 12px; border: 1px solid #555;
-            display: none;
+            background: rgba(0,0,0,0.8); color: white; padding: 8px 15px;
+            border-radius: 20px; font-size: 12px; border: 1px solid #555;
+            display: none; font-weight: bold;
         }
-        #status-hud.voice { border-color: #0f0; color: #0f0; } /* Voz Ativa */
-        #status-hud.auto { border-color: #ff0; color: #ff0; }   /* Auto Pilot Ativo */
+        #status-hud.voice { border-color: #0f0; color: #0f0; box-shadow: 0 0 10px #0f0; } 
+        #status-hud.auto { border-color: #ff0; color: #ff0; }   
 
-        /* Botão X Sair */
+        /* Botão Sair */
         #btn-exit {
             position: fixed; bottom: 30px; right: 30px; z-index: 100;
             background: #d00; color: white; border: none; width: 60px; height: 60px;
@@ -112,34 +112,33 @@
 <body>
 
     <div id="setup-panel">
-        <h2>Teleprompter Hybrid PRO</h2>
+        <h2>Teleprompter Blindado v10</h2>
         
-        <textarea id="input-text">Este é o texto de teste.
-Mesmo que você cole com parágrafos.
-O sistema vai juntar tudo.
-E se você parar de falar...
-O sistema assume o controle automaticamente.</textarea>
+        <textarea id="input-text">Este é o teste de segurança máxima.
+Mesmo que o texto seja longo.
+O sistema só enxerga dez palavras à frente.
+Impossível pular para o final.
+Se parar de falar, ele empurra o texto sozinho.</textarea>
         
         <div class="box">
             <label>
                 <input type="checkbox" id="check-voice" checked onclick="toggleWpmLabel()"> 
-                🎙️ Modo Híbrido (Voz + Auto-Resgate)
+                🎙️ Modo Híbrido (Blindado)
             </label>
-            <p style="font-size: 12px; color: #888; margin-top: 5px;">
-                Se desmarcado, vira rolagem automática pura.
+            <p style="font-size: 11px; color: #888; margin-top: 5px; margin-left: 28px;">
+                Voz controla. Silêncio ativa rolagem automática.
             </p>
         </div>
 
         <div class="box" style="display:flex; justify-content: space-between; align-items: center;">
             <div>
-                <label style="font-size:14px; margin-bottom:5px;" id="lbl-wpm">Velocidade (Resgate/Auto)</label>
+                <label style="font-size:13px; margin-bottom:5px;" id="lbl-wpm">Velocidade Resgate (WPM)</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="number" id="wpm-speed" value="140">
-                    <span style="font-size: 12px; color: #aaa;">WPM</span>
+                    <input type="number" id="wpm-speed" value="130">
                 </div>
             </div>
             <div>
-                <label style="font-size:14px; margin-bottom:5px;">Tamanho Fonte</label>
+                <label style="font-size:13px; margin-bottom:5px;">Tamanho Fonte</label>
                 <input type="number" id="font-size" value="60"> px
             </div>
         </div>
@@ -170,7 +169,7 @@ O sistema assume o controle automaticamente.</textarea>
         let allWordsElements = [];
         let currentWordIndex = -1;
         
-        // Controles de Tempo e Modo
+        // Controles Híbridos
         let isHybridMode = true; 
         let targetWPM = 140;
         let autoScrollInterval = null;
@@ -178,12 +177,10 @@ O sistema assume o controle automaticamente.</textarea>
         let silenceCheckInterval = null;
         let isAutoPiloting = false;
 
-        // --- 1. CONFIGURAÇÃO UI ---
+        // --- 1. UI E AUXILIARES ---
         function toggleWpmLabel() {
             const checked = document.getElementById('check-voice').checked;
-            const lbl = document.getElementById('lbl-wpm');
-            if (checked) lbl.innerText = "Velocidade de Resgate (WPM)";
-            else lbl.innerText = "Velocidade de Rolagem (WPM)";
+            document.getElementById('lbl-wpm').innerText = checked ? "Velocidade Resgate (WPM)" : "Velocidade Rolagem (WPM)";
         }
 
         function forceFullScreen() {
@@ -194,7 +191,14 @@ O sistema assume o controle automaticamente.</textarea>
             } catch (err) { console.log(err); }
         }
 
-        // --- 2. PREPARAÇÃO E FORMATAÇÃO DO TEXTO ---
+        function updateHud(text, type) {
+            const hud = document.getElementById('status-hud');
+            hud.innerText = text;
+            hud.className = type;
+            hud.style.display = 'block';
+        }
+
+        // --- 2. INICIALIZAÇÃO ---
         function initPrompter() {
             forceFullScreen();
 
@@ -207,8 +211,7 @@ O sistema assume o controle automaticamente.</textarea>
 
             if (!rawText.trim()) return alert("Digite um texto!");
 
-            // -- FORMATAÇÃO CONTÍNUA (O pedido do usuário) --
-            // Remove quebras de linha e transforma em espaço único
+            // Formatação: Bloco Contínuo
             const continuousText = rawText.replace(/\n/g, " ").replace(/\s+/g, " ");
             const words = continuousText.split(" ");
             
@@ -221,10 +224,9 @@ O sistema assume o controle automaticamente.</textarea>
             const textBox = document.getElementById('text-display');
             textBox.innerHTML = htmlHTML;
             textBox.style.fontSize = fontSize + "px";
-            
             allWordsElements = Array.from(document.querySelectorAll('.word'));
 
-            // -- SETUP VISUAL --
+            // Espelhamento
             const win = document.getElementById('prompter-window');
             win.className = "";
             if (mirrorX && mirrorY) win.classList.add('mirror-xy');
@@ -234,17 +236,17 @@ O sistema assume o controle automaticamente.</textarea>
             document.getElementById('setup-panel').style.display = 'none';
             win.style.display = 'block';
 
-            // Resetar Estados
+            // Resetar
             currentWordIndex = -1;
             lastVoiceTime = Date.now();
             isAutoPiloting = false;
 
-            // -- INICIAR MOTORES --
+            // Iniciar Motores
             if (isHybridMode) {
                 startVoiceEngine();
-                startSilenceWatcher(); // Monitora se você parou de falar
+                startSilenceWatcher();
             } else {
-                startManualAutoScroll(); // Modo clássico apenas WPM
+                startManualAutoScroll();
             }
         }
 
@@ -256,75 +258,54 @@ O sistema assume o controle automaticamente.</textarea>
             document.getElementById('setup-panel').style.display = 'flex';
         }
 
-        // --- 3. MOTOR DE AUTO-ROLAGEM (MANUAL OU RESGATE) ---
+        // --- 3. LÓGICA DE AUTO-ROLAGEM (RESGATE) ---
         function startManualAutoScroll() {
-            updateHud("Auto Scroll (Manual)", "auto");
-            const msPerWord = 60000 / targetWPM;
-            
-            if (autoScrollInterval) clearInterval(autoScrollInterval);
-            autoScrollInterval = setInterval(() => {
-                advanceOneWord();
-            }, msPerWord);
+            updateHud("Auto Scroll", "auto");
+            runAutoScrollLoop();
         }
 
-        function advanceOneWord() {
-            if (currentWordIndex < allWordsElements.length - 1) {
-                currentWordIndex++;
-                highlightAndScroll(currentWordIndex);
-            } else {
-                clearInterval(autoScrollInterval); // Fim do texto
-            }
-        }
-
-        // --- 4. MOTOR HÍBRIDO (VOZ + RESGATE) ---
         function startSilenceWatcher() {
-            // Checa a cada 200ms se houve silêncio
             if (silenceCheckInterval) clearInterval(silenceCheckInterval);
-            
             silenceCheckInterval = setInterval(() => {
                 const timeSinceVoice = Date.now() - lastVoiceTime;
                 
-                // Se silêncio > 2 segundos E ainda não estamos no piloto automático
+                // Se silêncio > 2s E não está no piloto automático
                 if (timeSinceVoice > 2000 && !isAutoPiloting) {
                     isAutoPiloting = true;
-                    updateHud("⚠️ Voz Perdida - Resgate Ativo", "auto");
-                    
-                    // Inicia rolagem baseada no WPM
-                    const msPerWord = 60000 / targetWPM;
-                    if (autoScrollInterval) clearInterval(autoScrollInterval);
-                    autoScrollInterval = setInterval(() => {
-                        advanceOneWord();
-                    }, msPerWord);
+                    updateHud("⚠️ Resgate Automático", "auto");
+                    runAutoScrollLoop();
                 }
             }, 200);
         }
 
-        function voiceDetectedAction() {
-            // Chamado sempre que a voz é detectada com sucesso
-            lastVoiceTime = Date.now();
+        function runAutoScrollLoop() {
+            const msPerWord = 60000 / targetWPM;
+            if (autoScrollInterval) clearInterval(autoScrollInterval);
             
-            if (isAutoPiloting) {
-                // DESLIGA O PILOTO AUTOMÁTICO IMEDIATAMENTE
-                isAutoPiloting = false;
-                clearInterval(autoScrollInterval);
-                updateHud("🎤 Voz Detectada", "voice");
-            } else {
-                updateHud("🎤 Voz Detectada", "voice");
-            }
+            autoScrollInterval = setInterval(() => {
+                if (currentWordIndex < allWordsElements.length - 1) {
+                    currentWordIndex++; // Avança o índice
+                    highlightAndScroll(currentWordIndex);
+                } else {
+                    clearInterval(autoScrollInterval);
+                }
+            }, msPerWord);
         }
 
+        // --- 4. MOTOR DE VOZ BLINDADO (SAFE SEARCH) ---
         function startVoiceEngine() {
             const hud = document.getElementById('status-hud');
             hud.style.display = 'block';
             hud.innerText = "Conectando...";
 
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) return alert("Navegador sem suporte a voz.");
+            if (!SpeechRecognition) return alert("Navegador incompatível.");
 
             recognition = new SpeechRecognition();
             recognition.lang = 'pt-BR';
             recognition.continuous = true;
             recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
 
             recognition.onstart = () => updateHud("Aguardando fala...", "voice");
             recognition.onend = () => {
@@ -341,49 +322,57 @@ O sistema assume o controle automaticamente.</textarea>
 
                 if (!lastSpokenWord) return;
 
-                // Tenta achar a palavra no texto
-                findWordInText(lastSpokenWord);
+                // CHAMA A BUSCA SEGURA
+                findWordSafely(lastSpokenWord);
             };
 
             try { recognition.start(); } catch(e) {}
         }
 
-        function findWordInText(spokenWord) {
+        function findWordSafely(spokenWord) {
             const cleanSpoken = spokenWord.replace(/[^\wÀ-ÿ]/g, "");
             
-            // Horizonte curto (olha 10 palavras à frente do ponto atual)
+            // --- A BLINDAGEM (SAFE WINDOW) ---
+            // O sistema só olha 12 palavras à frente do ponto ATUAL.
+            // É matematicamente impossível pular para o final do texto.
+            
             const startSearch = currentWordIndex + 1;
-            const endSearch = Math.min(startSearch + 15, allWordsElements.length);
+            const endSearch = Math.min(startSearch + 12, allWordsElements.length);
             
             for (let i = startSearch; i < endSearch; i++) {
                 if (allWordsElements[i].dataset.clean === cleanSpoken) {
                     
-                    // MATCH ENCONTRADO!
-                    voiceDetectedAction(); // Avisa o sistema que a voz voltou
+                    // MATCH CONFIRMADO NA ZONA SEGURA
+                    lastVoiceTime = Date.now(); // Reseta timer de silêncio
                     
-                    currentWordIndex = i;
+                    if (isAutoPiloting) {
+                        isAutoPiloting = false;
+                        clearInterval(autoScrollInterval); // Para o auto scroll
+                    }
+                    updateHud("🎤 Voz Detectada", "voice");
+
+                    currentWordIndex = i; // Atualiza posição oficial
                     highlightAndScroll(i);
-                    break;
+                    break; // Para de procurar assim que achar a primeira (segurança)
                 }
             }
         }
 
-        // --- 5. FUNÇÃO VISUAL ---
+        // --- 5. VISUALIZAÇÃO ---
         function highlightAndScroll(index) {
-            // Limpa anteriores
-            // Para performance, limpamos apenas os vizinhos ou fazemos loop total se necessário
-            // Loop total é mais seguro visualmente
+            // Atualiza classes (apenas no range visível para performance, ou total)
+            // Aqui faremos total para garantir limpeza visual
             allWordsElements.forEach((el, i) => {
                 el.classList.remove('current', 'read');
                 if (i < index) el.classList.add('read');
                 if (i === index) el.classList.add('current');
             });
 
-            // Scroll
+            // Scroll suave
             const el = allWordsElements[index];
             if (el) {
                 const container = document.getElementById('scrolling-content');
-                // Centraliza na linha vermelha (35% da tela)
+                // Centraliza na linha vermelha (35% do topo)
                 const target = el.offsetTop - (window.innerHeight * 0.35);
                 
                 container.scrollTo({
@@ -392,14 +381,6 @@ O sistema assume o controle automaticamente.</textarea>
                 });
             }
         }
-
-        function updateHud(text, type) {
-            const hud = document.getElementById('status-hud');
-            hud.innerText = text;
-            hud.className = type;
-            hud.style.display = 'block';
-        }
-
     </script>
 </body>
 </html>
