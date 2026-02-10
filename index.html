@@ -2,91 +2,79 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teleprompter Pro 5.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Teleprompter AI Karaoke 6.0</title>
     <style>
-        /* Estilo Geral */
-        body { margin: 0; background-color: #000; color: white; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
+        /* --- ESTILO GERAL --- */
+        body { margin: 0; background-color: #050505; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         
         /* Menu de Configuração */
         #setup-panel {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #121212; z-index: 20; padding: 20px; box-sizing: border-box;
+            background: #121212; z-index: 30; padding: 20px; box-sizing: border-box;
             display: flex; flex-direction: column; gap: 15px; overflow-y: auto;
         }
-        
-        h2 { color: #fff; margin-bottom: 5px; font-size: 1.4rem; border-bottom: 1px solid #333; padding-bottom: 10px; }
+
+        h2 { color: #fff; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         
         textarea {
-            width: 100%; height: 120px; background: #222; color: #eee;
+            width: 100%; height: 120px; background: #222; color: #ddd;
             border: 1px solid #444; padding: 15px; font-size: 16px; border-radius: 8px;
-            resize: vertical; font-family: monospace;
+            font-family: monospace; resize: vertical;
         }
         
-        .section-box {
-            background: #1e1e1e; border-radius: 8px; padding: 15px;
-            border: 1px solid #333;
-        }
-
-        .controls-row {
-            display: flex; flex-wrap: wrap; gap: 20px; align-items: center;
-        }
+        .box { background: #1e1e1e; border-radius: 8px; padding: 15px; border: 1px solid #333; margin-bottom: 10px; }
         
-        .control-item { display: flex; flex-direction: column; gap: 5px; flex: 1; }
-        
-        label { color: #aaa; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
-        
-        input[type="number"] { 
-            padding: 12px; background: #333; color: white; border: 1px solid #555; 
-            border-radius: 4px; font-size: 18px; width: 100%; box-sizing: border-box;
-        }
-
-        /* Checkboxes e Voz */
-        .checkbox-label {
-            display: flex; align-items: center; gap: 10px; cursor: pointer;
-            font-size: 16px; color: #fff; text-transform: none;
-        }
-        input[type="checkbox"] { transform: scale(1.5); margin: 0; }
-
-        /* Botões Principais */
-        .action-buttons {
-            display: flex; gap: 10px; margin-top: 10px; margin-bottom: 30px;
-        }
+        label { display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer; font-size: 15px; }
+        input[type="checkbox"] { transform: scale(1.4); }
+        input[type="number"] { padding: 10px; border-radius: 5px; border: none; background: #333; color: white; width: 70px; }
 
         .btn {
             padding: 15px; border: none; border-radius: 8px; cursor: pointer; 
-            font-size: 16px; font-weight: bold; flex: 1; text-transform: uppercase;
-            transition: opacity 0.2s;
+            font-size: 16px; font-weight: bold; width: 100%; text-transform: uppercase;
+            color: white; margin-top: 5px;
         }
-        .btn:active { opacity: 0.8; transform: scale(0.98); }
+        .btn-start { background: linear-gradient(90deg, #28a745, #218838); }
+        .btn-full { background: #17a2b8; margin-bottom: 10px; }
 
-        .btn-fullscreen { background: #17a2b8; color: white; flex: 0.4; } /* Botão menor */
-        .btn-start { background: #28a745; color: white; flex: 1; }     /* Botão maior */
-
-        /* Indicador de Status do Mic */
-        #mic-status-light {
-            display: inline-block; width: 10px; height: 10px; border-radius: 50%;
-            background: #444; margin-left: auto;
-        }
-        
-        /* Área do Teleprompter */
+        /* --- ÁREA DO PROMPTER --- */
         #prompter-window {
             display: none; width: 100%; height: 100vh; position: relative;
             background: black; overflow: hidden;
         }
 
+        /* Onde o texto mora */
         #scrolling-content {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            overflow-y: auto; padding: 0 20px;
+            overflow-y: auto; padding: 0 30px;
+            scroll-behavior: smooth; /* Rolagem suave nativa */
             -ms-overflow-style: none; scrollbar-width: none;
         }
         #scrolling-content::-webkit-scrollbar { display: none; }
         
         #text-display {
-            padding-top: 35vh; /* Linha vermelha está em 30%, texto começa um pouco abaixo */
-            padding-bottom: 100vh;
-            font-size: 60px; line-height: 1.4; text-align: center;
-            font-weight: bold; margin: 0 auto; max-width: 90%;
+            padding-top: 40vh; padding-bottom: 80vh;
+            font-size: 50px; line-height: 1.6; text-align: center;
+            font-weight: bold; margin: 0 auto; max-width: 900px;
+            color: #555; /* Texto não lido fica mais escuro */
+            transition: color 0.3s;
+        }
+
+        /* O Karaoke Mágico */
+        .word { transition: color 0.2s, background 0.2s; padding: 0 2px; border-radius: 4px; }
+        
+        /* Palavras Lidas ou Ativas */
+        .word.active { color: #fff; text-shadow: 0 0 10px rgba(255,255,255,0.5); }
+        .word.current { 
+            color: #ffff00; /* Amarelo */
+            background: rgba(255, 255, 0, 0.2); /* Fundo suave */
+            transform: scale(1.1); display: inline-block;
+        }
+
+        /* Marcador Visual */
+        #center-marker {
+            position: fixed; top: 35%; left: 0; width: 100%; height: 2px;
+            background: rgba(255, 0, 0, 0.4); z-index: 20; pointer-events: none;
         }
 
         /* Espelhamento */
@@ -94,330 +82,257 @@
         .mirror-y { transform: scaleY(-1); }
         .mirror-xy { transform: scale(-1, -1); }
 
-        /* Controles Flutuantes */
-        #overlay-controls {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background: linear-gradient(to top, rgba(0,0,0,1), rgba(0,0,0,0));
-            padding: 30px 20px;
-            display: none; justify-content: center; gap: 20px;
-            z-index: 100;
-        }
-
-        .btn-control {
-            padding: 15px 30px; font-size: 18px; border: none; border-radius: 50px;
-            cursor: pointer; font-weight: bold; min-width: 120px; 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
-        }
-        .btn-pause { background: #ffc107; color: #000; }
-        .btn-stop { background: #dc3545; color: white; }
-
-        /* HUD de Voz durante a leitura */
+        /* Status de Voz */
         #voice-hud {
-            position: fixed; top: 20px; right: 20px; 
-            background: rgba(0,0,0,0.7); border: 1px solid #555;
-            padding: 8px 15px; border-radius: 20px; 
-            font-size: 14px; color: #aaa; display: none; z-index: 101;
-        }
-        .hud-active { color: #0f0 !important; border-color: #0f0 !important; }
-        .hud-waiting { color: #ff0 !important; border-color: #ff0 !important; }
-
-        /* Marcador Central (Linha Vermelha) */
-        #center-marker {
-            position: fixed; top: 30%; left: 0; width: 100%; height: 2px;
-            background: rgba(255, 0, 0, 0.6); 
-            box-shadow: 0 0 8px rgba(255,0,0,0.8);
-            z-index: 50; pointer-events: none;
+            position: fixed; top: 20px; right: 20px; z-index: 100;
+            background: rgba(0,0,0,0.8); color: lime; padding: 8px 15px;
+            border-radius: 20px; font-size: 14px; border: 1px solid lime;
             display: none;
         }
-        #center-marker::before, #center-marker::after {
-            content: "▲"; color: rgba(255,0,0,0.8); font-size: 14px;
-            position: absolute; top: -6px;
+        #voice-hud.error { color: red; border-color: red; }
+
+        /* Botão Sair flutuante discreto */
+        #btn-exit {
+            position: fixed; bottom: 20px; right: 20px; z-index: 100; opacity: 0.3;
+            background: red; color: white; border: none; padding: 15px; border-radius: 50%;
+            font-weight: bold; cursor: pointer;
         }
-        #center-marker::before { left: 5px; transform: rotate(90deg); }
-        #center-marker::after { right: 5px; transform: rotate(-90deg); }
+        #btn-exit:hover { opacity: 1; }
 
     </style>
 </head>
 <body>
 
     <div id="setup-panel">
-        <h2>Teleprompter Studio</h2>
+        <h2>Teleprompter AI Karaoke 6.0</h2>
+        <p style="font-size:12px; color:#888;">Para melhor resultado, use no Chrome/Android e fale claramente.</p>
         
-        <textarea id="input-text" placeholder="Cole seu roteiro aqui...">Este é o texto de teste.
-Ao ativar o microfone abaixo, o navegador pedirá permissão.
-Você deve permitir para que a rolagem por voz funcione.
-Fale para rolar. Fique em silêncio para pausar.</textarea>
+        <textarea id="input-text" placeholder="Cole seu texto aqui...">Olá! Este é o modo Karaoke.
+O sistema vai tentar ouvir sua voz.
+Conforme você fala cada palavra, ela brilha em amarelo.
+A tela rola sozinha seguindo sua leitura.
+Se o silêncio reinar, a tela para.</textarea>
         
-        <div class="section-box">
-            <div class="controls-row">
-                <div class="control-item">
-                    <label>Tamanho (px)</label>
-                    <input type="number" id="font-size" value="60">
-                </div>
-                <div class="control-item">
-                    <label>Velocidade (WPM)</label>
-                    <input type="number" id="wpm-speed" value="140">
-                </div>
-            </div>
-        </div>
-
-        <div class="section-box" style="border-color: #007bff;">
-            <label class="checkbox-label">
-                <input type="checkbox" id="check-voice" onchange="toggleVoicePermission(this)"> 
-                🎙️ Ativar Controle por Voz
-                <span id="mic-status-light"></span>
+        <div class="box">
+            <label>
+                <input type="checkbox" id="check-voice" checked> 
+                🎙️ Ativar Rolagem por Voz (AI)
             </label>
-            <div style="font-size: 12px; color: #888; margin-top: 5px; margin-left: 30px;">
-                Ao marcar, permita o acesso ao microfone.
+        </div>
+
+        <div class="box" style="display:flex; gap:15px; flex-wrap:wrap;">
+            <div style="flex:1;">
+                <label style="font-size:12px;">Tamanho (px)</label>
+                <input type="number" id="font-size" value="55">
+            </div>
+            <div style="flex:1;">
+                <label style="font-size:12px;">Velocidade Backup</label>
+                <input type="number" id="wpm-speed" value="10">
             </div>
         </div>
 
-        <div class="section-box">
-            <div class="controls-row">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="check-mirror-x"> Espelhar Horizontal
-                </label>
-                <label class="checkbox-label">
-                    <input type="checkbox" id="check-mirror-y"> Espelhar Vertical
-                </label>
+        <div class="box">
+            <div style="display:flex; gap:20px;">
+                <label><input type="checkbox" id="check-mirror-x"> Espelhar X</label>
+                <label><input type="checkbox" id="check-mirror-y"> Espelhar Y</label>
             </div>
         </div>
 
-        <div class="action-buttons">
-            <button class="btn btn-fullscreen" onclick="toggleFullScreen()">⛶ TELA CHEIA</button>
-            <button class="btn btn-start" onclick="startPrompter()">INICIAR ▶</button>
-        </div>
-        
-        <div style="text-align: center; color: #444; font-size: 12px; margin-top: 20px;">
-            v5.0 - GitHub Version
-        </div>
+        <button class="btn btn-full" onclick="toggleFullScreen()">⛶ TELA CHEIA</button>
+        <button class="btn btn-start" onclick="startPrompter()">INICIAR ▶</button>
     </div>
 
     <div id="prompter-window">
-        <div id="voice-hud">🎙️ Aguardando voz...</div>
+        <div id="voice-hud">Aguardando fala...</div>
         <div id="scrolling-content">
             <div id="text-display"></div>
         </div>
         <div id="center-marker"></div>
-    </div>
-    
-    <div id="overlay-controls">
-        <button id="btn-toggle" class="btn-control btn-pause" onclick="togglePauseManual()">PAUSAR ⏸</button>
-        <button class="btn-control btn-stop" onclick="stopPrompter()">SAIR ⏹</button>
+        <button id="btn-exit" onclick="stopPrompter()">X</button>
     </div>
 
     <script>
-        let scrollInterval = null;
-        let currentScroll = 0;
-        let isPaused = false;
-        let pixelsPerTick = 0;
-        let scroller;
+        // Variáveis Globais
+        let recognition;
+        let isListening = false;
+        let allWordsElements = []; // Array com todos os spans das palavras
+        let lastFoundIndex = -1; // Última palavra encontrada
         
-        // Variáveis de Voz
-        let audioContext;
-        let analyser;
-        let microphoneStream = null;
-        let silenceTimer = null;
-        let voiceEnabled = false;
-
-        // --- FUNÇÃO 1: PEDIR PERMISSÃO DO MICROFONE (IMEDIATO) ---
-        async function toggleVoicePermission(checkbox) {
-            const light = document.getElementById('mic-status-light');
-            
-            if (checkbox.checked) {
-                try {
-                    // Pede permissão AGORA, no momento do clique
-                    microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    
-                    // Sucesso
-                    light.style.background = "#0f0"; // Verde
-                    voiceEnabled = true;
-                    
-                } catch (err) {
-                    // Erro ou Negado
-                    console.error(err);
-                    alert("⚠️ Permissão de microfone negada ou indisponível.\nVerifique as configurações do navegador ou se o site está em HTTPS.");
-                    checkbox.checked = false;
-                    voiceEnabled = false;
-                    light.style.background = "#f00"; // Vermelho
-                }
-            } else {
-                // Desligar
-                voiceEnabled = false;
-                light.style.background = "#444";
-                if (microphoneStream) {
-                    microphoneStream.getTracks().forEach(track => track.stop());
-                    microphoneStream = null;
-                }
-            }
-        }
-
-        // --- FUNÇÃO 2: TELA CHEIA (INDEPENDENTE) ---
+        // Configuração Inicial
         function toggleFullScreen() {
             if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(err => {
-                    alert(`Erro ao tentar tela cheia: ${err.message}`);
-                });
+                document.documentElement.requestFullscreen().catch(e => console.log(e));
             } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                }
+                document.exitFullscreen();
             }
         }
 
-        // --- FUNÇÃO 3: INICIAR O PROMPTER ---
         function startPrompter() {
-            const text = document.getElementById('input-text').value;
+            const rawText = document.getElementById('input-text').value;
             const fontSize = document.getElementById('font-size').value;
-            const wpm = parseInt(document.getElementById('wpm-speed').value) || 100;
+            const useVoice = document.getElementById('check-voice').checked;
             const mirrorX = document.getElementById('check-mirror-x').checked;
             const mirrorY = document.getElementById('check-mirror-y').checked;
 
-            if (!text.trim()) return alert("Digite o texto do roteiro!");
+            if (!rawText.trim()) return alert("Digite um texto!");
 
-            // Configurar UI
-            const setupPanel = document.getElementById('setup-panel');
-            const prompterWindow = document.getElementById('prompter-window');
+            // 1. Preparar o Texto (Transformar em SPANS para o Karaoke)
             const textBox = document.getElementById('text-display');
-            scroller = document.getElementById('scrolling-content');
-            
-            // Inserir Texto
-            textBox.innerHTML = text.replace(/\n/g, "<br>");
             textBox.style.fontSize = fontSize + "px";
+            
+            // Limpa e recria o HTML palavra por palavra
+            const words = rawText.replace(/\n/g, " <br> ").split(/\s+/);
+            let htmlContent = "";
+            let wordIndex = 0;
 
-            // Espelhamento
-            prompterWindow.className = "";
-            if (mirrorX && mirrorY) prompterWindow.classList.add('mirror-xy');
-            else if (mirrorX) prompterWindow.classList.add('mirror-x');
-            else if (mirrorY) prompterWindow.classList.add('mirror-y');
-
-            // Trocar Telas
-            setupPanel.style.display = 'none';
-            prompterWindow.style.display = 'block';
-            document.getElementById('overlay-controls').style.display = 'flex';
-            document.getElementById('center-marker').style.display = 'block';
-
-            // Resetar
-            scroller.scrollTop = 0;
-            currentScroll = 0;
-
-            // Se voz estiver ativa, configuramos o AudioContext agora usando o stream já obtido
-            if (voiceEnabled && microphoneStream) {
-                initAudioAnalysis();
-                isPaused = true; // Começa pausado esperando voz
-                document.getElementById('btn-toggle').style.display = 'none'; // Esconde botão manual
-                document.getElementById('voice-hud').style.display = 'block';
-            } else {
-                isPaused = false; // Começa rodando direto
-                document.getElementById('btn-toggle').style.display = 'block';
-                document.getElementById('voice-hud').style.display = 'none';
-                updatePauseButtonUI();
-            }
-
-            // Cálculo WPM e Loop de Scroll
-            setTimeout(() => {
-                const wordCount = text.trim().split(/\s+/).length;
-                const totalMinutes = wordCount / wpm;
-                const contentHeight = textBox.scrollHeight; 
-                const pixelsPerSecond = contentHeight / (totalMinutes * 60);
-                const intervalTime = 20; 
-                pixelsPerTick = pixelsPerSecond * (intervalTime / 1000);
-
-                if (scrollInterval) clearInterval(scrollInterval);
-                scrollInterval = setInterval(autoScroll, intervalTime);
-            }, 500);
-        }
-
-        function autoScroll() {
-            if (!isPaused && scroller) {
-                currentScroll += pixelsPerTick;
-                scroller.scrollTop = currentScroll;
-            }
-        }
-
-        // --- LÓGICA DE DETECÇÃO DE VOZ ---
-        function initAudioAnalysis() {
-            // Cria o contexto de áudio
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const source = audioContext.createMediaStreamSource(microphoneStream);
-            analyser = audioContext.createAnalyser();
-            analyser.fftSize = 256;
-            source.connect(analyser);
-
-            const dataArray = new Uint8Array(analyser.frequencyBinCount);
-            const hud = document.getElementById('voice-hud');
-
-            function detectLoop() {
-                if (!voiceEnabled || document.getElementById('prompter-window').style.display === 'none') return;
-
-                analyser.getByteFrequencyData(dataArray);
-                
-                // Média de volume
-                let sum = 0;
-                for(let i = 0; i < dataArray.length; i++) sum += dataArray[i];
-                let average = sum / dataArray.length;
-
-                // LIMIAR DE VOZ (Ajuste se necessário: 10 é sensível, 20 exige fala mais alta)
-                const threshold = 10; 
-
-                if (average > threshold) {
-                    // VOZ DETECTADA
-                    if (silenceTimer) { clearTimeout(silenceTimer); silenceTimer = null; }
-                    
-                    if (isPaused) {
-                        isPaused = false;
-                        hud.innerText = "🗣️ Ouvindo...";
-                        hud.className = "hud-active";
-                    }
-                } else {
-                    // SILÊNCIO
-                    if (!isPaused && !silenceTimer) {
-                        hud.innerText = "⏳ ..."; // Aviso visual rápido
-                        silenceTimer = setTimeout(() => {
-                            isPaused = true;
-                            hud.innerText = "⏸️ Pausa (Silêncio)";
-                            hud.className = "hud-waiting";
-                        }, 2000); // 2 segundos de tolerância
-                    }
+            words.forEach(word => {
+                if(word === "<br>") {
+                    htmlContent += "<br>";
+                } else if (word.trim() !== "") {
+                    // Limpa pontuação para facilitar o ID, mas mantém no visual
+                    const cleanWord = word.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"");
+                    htmlContent += `<span id="word-${wordIndex}" class="word" data-clean="${cleanWord}">${word}</span> `;
+                    wordIndex++;
                 }
-                requestAnimationFrame(detectLoop);
-            }
-            detectLoop();
-        }
+            });
+            textBox.innerHTML = htmlContent;
 
-        // --- FUNÇÕES DE CONTROLE ---
-        function togglePauseManual() {
-            isPaused = !isPaused;
-            updatePauseButtonUI();
-        }
+            // Coletar referências dos elementos criados
+            allWordsElements = Array.from(document.querySelectorAll('.word'));
+            lastFoundIndex = -1;
 
-        function updatePauseButtonUI() {
-            const btn = document.getElementById('btn-toggle');
-            if (isPaused) {
-                btn.innerText = "CONTINUAR ▶";
-                btn.style.backgroundColor = "#28a745";
-                btn.style.color = "white";
+            // 2. Configurar Tela
+            const setup = document.getElementById('setup-panel');
+            const prompter = document.getElementById('prompter-window');
+            
+            prompter.className = ""; // Resetar espelhos
+            if (mirrorX && mirrorY) prompter.classList.add('mirror-xy');
+            else if (mirrorX) prompter.classList.add('mirror-x');
+            else if (mirrorY) prompter.classList.add('mirror-y');
+
+            setup.style.display = 'none';
+            prompter.style.display = 'block';
+
+            // 3. Iniciar Inteligência Artificial (Speech Recognition)
+            if (useVoice) {
+                initSpeechRecognition();
             } else {
-                btn.innerText = "PAUSAR ⏸";
-                btn.style.backgroundColor = "#ffc107"; 
-                btn.style.color = "black";
+                document.getElementById('voice-hud').style.display = 'none';
+                // Se não usar voz, roda scroll automático simples (lógica simplificada aqui)
+                // Para manter o foco no Karaoke, deixei o modo manual simples.
             }
         }
 
         function stopPrompter() {
-            clearInterval(scrollInterval);
+            if (recognition) recognition.stop();
             document.getElementById('prompter-window').style.display = 'none';
-            document.getElementById('overlay-controls').style.display = 'none';
             document.getElementById('setup-panel').style.display = 'flex';
-            
-            // Se estiver em fullscreen, pode querer sair ou não.
-            // Geralmente mantemos se o usuário clicou no botão fullscreen separado.
         }
-        
-        // Clique na tela para pausa manual rápida (se não for voz)
-        document.getElementById('prompter-window').addEventListener('click', () => {
-             if (!voiceEnabled) togglePauseManual();
-        });
+
+        // --- CORAÇÃO DO SISTEMA: RECONHECIMENTO DE VOZ ---
+        function initSpeechRecognition() {
+            const hud = document.getElementById('voice-hud');
+            hud.style.display = 'block';
+
+            // Verifica suporte do navegador
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            
+            if (!SpeechRecognition) {
+                hud.innerText = "Navegador sem suporte a IA de voz.";
+                hud.className = "error";
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'pt-BR';
+            recognition.continuous = true; // Continua ouvindo
+            recognition.interimResults = true; // Resultados parciais (tempo real)
+            
+            recognition.onstart = () => {
+                hud.innerText = "🟢 Ouvindo... (Fale o texto)";
+                hud.className = "";
+            };
+
+            recognition.onerror = (event) => {
+                hud.innerText = "Erro: " + event.error;
+                hud.className = "error";
+            };
+
+            recognition.onend = () => {
+                // Se parar (silêncio longo), reinicia para não travar
+                if (document.getElementById('prompter-window').style.display === 'block') {
+                    try { recognition.start(); } catch(e){}
+                }
+            };
+
+            // O Mágico Acontece Aqui
+            recognition.onresult = (event) => {
+                // Pega a última frase dita (mesmo que parcial)
+                const resultIndex = event.resultIndex;
+                const transcript = event.results[resultIndex][0].transcript.toLowerCase().trim();
+                const spokenWords = transcript.split(/\s+/);
+
+                // Tenta achar as palavras ditas no texto
+                // Estratégia: Olha as últimas 3 palavras ditas para tentar sincronizar
+                const lastSpokenWord = spokenWords[spokenWords.length - 1];
+                
+                // Busca a palavra no texto A PARTIR de onde paramos (lastFoundIndex)
+                // Isso evita que ele volte para o começo se a palavra se repetir
+                let matchIndex = -1;
+                
+                // Procura nos próximos 50 palavras (janela de busca) para performance
+                const searchHorizon = 50; 
+                let startSearch = lastFoundIndex + 1;
+                let endSearch = Math.min(startSearch + searchHorizon, allWordsElements.length);
+
+                for (let i = startSearch; i < endSearch; i++) {
+                    const el = allWordsElements[i];
+                    // Comparação "Fuzzy" simples (limpa pontuação)
+                    if (el.dataset.clean === lastSpokenWord.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g,"")) {
+                        matchIndex = i;
+                        break;
+                    }
+                }
+
+                if (matchIndex !== -1) {
+                    lastFoundIndex = matchIndex;
+                    highlightAndScroll(matchIndex);
+                }
+            };
+
+            recognition.start();
+        }
+
+        function highlightAndScroll(index) {
+            // 1. Atualizar Cores (Efeito Karaoke)
+            // Todas antes ficam brancas (lidas), a atual Amarela, as futuras cinza
+            allWordsElements.forEach((el, i) => {
+                el.classList.remove('current', 'active');
+                if (i < index) {
+                    el.classList.add('active'); // Já lido (Branco brilhante)
+                } else if (i === index) {
+                    el.classList.add('current'); // Atual (Amarelo)
+                }
+                // Futuros continuam cinza pelo CSS padrão
+            });
+
+            // 2. Rolagem Inteligente
+            const currentElement = allWordsElements[index];
+            if (currentElement) {
+                const container = document.getElementById('scrolling-content');
+                const markerPosition = window.innerHeight * 0.35; // 35% da tela (linha vermelha)
+                
+                // Calcula onde o elemento está dentro do scroll total
+                // E subtrai a posição do marcador para que o elemento fique EM CIMA da linha
+                const scrollTarget = currentElement.offsetTop - markerPosition;
+
+                // Scroll Suave para a posição
+                container.scrollTo({
+                    top: scrollTarget,
+                    behavior: 'smooth'
+                });
+            }
+        }
     </script>
 </body>
 </html>
