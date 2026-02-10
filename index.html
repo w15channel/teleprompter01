@@ -64,3 +64,347 @@
         /* Palavras */
         .word { 
             display: inline-block; padding: 2px 4px; border-radius: 4px; transition: all 0.2s;
+        }
+        .word.read { color: #fff; opacity: 0.6; }
+        .word.current { 
+            color: #ffff00; background: rgba(255, 255, 0, 0.2);
+            transform: scale(1.1); text-shadow: 0 0 10px yellow;
+        }
+
+        /* Marcador Vermelho */
+        #center-marker {
+            position: fixed; top: 35%; left: 0; width: 100%; height: 2px;
+            background: rgba(255, 0, 0, 0.5); z-index: 20; pointer-events: none;
+        }
+
+        /* Status Voz */
+        #voice-hud {
+            position: fixed; top: 15px; right: 15px; z-index: 100;
+            background: rgba(0,0,0,0.8); color: white; padding: 5px 12px;
+            border-radius: 15px; font-size: 12px; border: 1px solid #555;
+            display: none;
+        }
+        #voice-hud.listening { border-color: #0f0; color: #0f0; }
+
+        /* Botão X Sair */
+        #btn-exit {
+            position: fixed; bottom: 20px; right: 20px; z-index: 100;
+            background: #d00; color: white; border: none; width: 50px; height: 50px;
+            border-radius: 50%; font-weight: bold; font-size: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        /* Espelhamento */
+        .mirror-x { transform: scaleX(-1); }
+        .mirror-y { transform: scaleY(-1); }
+        .mirror-xy { transform: scale(-1, -1); }
+
+    </style>
+</head>
+<body>
+
+    <div id="setup-panel">
+        <h2>Teleprompter v8.0</h2>
+        
+        <textarea id="input-text">Este é o texto de teste.
+Ele tem várias linhas.
+O sistema não deve deixar pular para a próxima linha
+até que você termine a linha atual.</textarea>
+        
+        <div class="box">
+            <label>
+                <input type="checkbox" id="check-voice" checked> 
+                🎙️ Ativar Rolagem por Voz (Smart)
+            </label>
+        </div>
+
+        <div class="box" style="display:flex; justify-content: space-between;">
+            <div>
+                <label style="font-size:12px; margin-bottom:5px;">Tamanho (px)</label>
+                <input type="number" id="font-size" value="55">
+            </div>
+        </div>
+
+        <div class="box">
+            <div style="display:flex; gap:20px;">
+                <label><input type="checkbox" id="check-mirror-x"> Espelhar X</label>
+                <label><input type="checkbox" id="check-mirror-y"> Espelhar Y</label>
+            </div>
+        </div>
+
+        <button class="btn btn-full" onclick="forceFullScreen()">⛶ TELA CHEIA</button>
+        <button class="btn btn-start" onclick="initPrompter()">INICIAR ▶</button>
+    </div>
+
+    <div id="prompter-window">
+        <div id="voice-hud">Inicializando...</div>
+        <div id="scrolling-content">
+            <div id="text-display"></div>
+        </div>
+        <div id="center-marker"></div>
+        <button id="btn-exit" onclick="stopPrompter()">X</button>
+    </div>
+
+    <script>
+        // --- VARIÁVEIS GLOBAIS ---
+        let recognition;
+        let allWords = [];
+        let currentWordIndex = -1;
+        let currentLineIndex = 0;
+        let isListening = false;
+
+        // --- 1. FUNÇÃO DE TELA CHEIA ROBUSTA ---
+        function forceFullScreen() {
+            const elem = document.documentElement;
+            try {
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen();
+                } else if (elem.webkitRequestFullscreen) { /* Safari */
+                    elem.webkitRequestFullscreen();
+                } else if (elem.msRequestFullscreen) { /* IE11 */
+                    elem.msRequestFullscreen();
+                }
+            } catch (err) {
+                alert("Erro ao tentar tela cheia: " + err.message);
+            }
+        }
+
+        // --- 2. INICIALIZAÇÃO (BOTÃO INICIAR) ---
+        function initPrompter() {
+            // Tenta tela cheia novamente ao iniciar
+            forceFullScreen();
+
+            const rawText = document.getElementById('input-text').value;
+            const fontSize = document.getElementById('font-size').value;
+            const useVoice = document.getElementById('check-voice').checked;
+            const mirrorX = document.getElementById('check-mirror-x').checked;
+            const mirrorY = document.getElementById('check-mirror-y').checked;
+
+            if (!rawText.trim()) return alert("Digite um texto!");
+
+            // -- PREPARAÇÃO DO HTML --
+            const textBox = document.getElementById('text-display');
+            textBox.style.fontSize = fontSize + "px";
+            
+            // Lógica de construção de palavras e linhas
+            const lines = rawText.split(/\n/);
+            let htmlHTML = "";
+            let globalIndex = 0;
+
+            lines.forEach((line, lineIdx) => {
+                if(line.trim() === "") {
+                    htmlHTML += "<br>";
+                    return;
+                }
+                
+                // Quebra a linha em palavras
+                const words = line.trim().split(/\s+/);
+                
+                // Adiciona container da linha (opcional para debug)
+                htmlHTML += `<div style="display:inline-block;">`; 
+                
+                words.forEach((word, wordIdx) => {
+                    // Limpeza para comparação
+                    const clean = word.toLowerCase().replace(/[^\wÀ-ÿ]/g, ""); 
+                    // Marca as últimas 3 palavras como "zona final"
+                    const isEndZone = wordIdx >= (words.length - 4); 
+
+                    htmlHTML += `<span id="w-${globalIndex}" class="word" 
+                        data-clean="${clean}" 
+                        data-line="${lineIdx}" 
+                        data-endzone="${isEndZone}">${word}</span> `;
+                    
+                    globalIndex++;
+                });
+                
+                htmlHTML += `</div><br>`;
+            });
+
+            textBox.innerHTML = htmlHTML;
+            allWords = Array.from(document.querySelectorAll('.word'));
+            
+            // -- CONFIGURAÇÃO VISUAL --
+            const win = document.getElementById('prompter-window');
+            win.className = "";
+            if (mirrorX && mirrorY) win.classList.add('mirror-xy');
+            else if (mirrorX) win.classList.add('mirror-x');
+            else if (mirrorY) win.classList.add('mirror-y');
+
+            document.getElementById('setup-panel').style.display = 'none';
+            win.style.display = 'block';
+
+            // Resetar Variáveis
+            currentWordIndex = -1;
+            currentLineIndex = 0;
+
+            // -- INICIAR VOZ (Se marcado) --
+            if (useVoice) {
+                startVoiceRecognition();
+            } else {
+                document.getElementById('voice-hud').style.display = 'none';
+            }
+        }
+
+        function stopPrompter() {
+            if (recognition) try { recognition.stop(); } catch(e){}
+            document.getElementById('prompter-window').style.display = 'none';
+            document.getElementById('setup-panel').style.display = 'flex';
+        }
+
+        // --- 3. RECONHECIMENTO DE VOZ E LÓGICA DE BLOQUEIO ---
+        function startVoiceRecognition() {
+            const hud = document.getElementById('voice-hud');
+            hud.style.display = 'block';
+            hud.innerText = "Conectando mic...";
+
+            // Compatibilidade Cruzada
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+            if (!SpeechRecognition) {
+                alert("Seu navegador não suporta reconhecimento de voz. Tente usar o Chrome.");
+                return;
+            }
+
+            recognition = new SpeechRecognition();
+            recognition.lang = 'pt-BR';
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = () => {
+                hud.innerText = "🟢 Ouvindo...";
+                hud.classList.add('listening');
+            };
+
+            recognition.onerror = (event) => {
+                hud.innerText = "Erro: " + event.error;
+                hud.classList.remove('listening');
+                console.error("Erro voz:", event.error);
+            };
+
+            recognition.onend = () => {
+                // Reiniciar automático se parar sem querer
+                if (document.getElementById('prompter-window').style.display === 'block') {
+                    try { recognition.start(); } catch(e){}
+                }
+            };
+
+            recognition.onresult = (event) => {
+                try {
+                    const resultIndex = event.resultIndex;
+                    const result = event.results[resultIndex];
+                    if (!result) return;
+                    
+                    const transcript = result[0].transcript.toLowerCase().trim();
+                    const spokenWords = transcript.split(/\s+/);
+                    const lastSpokenWord = spokenWords[spokenWords.length - 1];
+
+                    if (!lastSpokenWord) return;
+
+                    // LÓGICA DE BUSCA E BLOQUEIO
+                    findAndScroll(lastSpokenWord);
+
+                } catch (err) {
+                    console.error("Erro no processamento:", err);
+                }
+            };
+
+            try {
+                recognition.start();
+            } catch(e) {
+                alert("Erro ao iniciar microfone: " + e.message);
+            }
+        }
+
+        function findAndScroll(spokenWord) {
+            // Limpa a palavra falada para comparar
+            const cleanSpoken = spokenWord.replace(/[^\wÀ-ÿ]/g, "");
+
+            // Horizonte de busca: Olha as próximas 12 palavras apenas
+            const startSearch = currentWordIndex + 1;
+            const endSearch = Math.min(startSearch + 12, allWords.length);
+            
+            let matchIndex = -1;
+
+            for (let i = startSearch; i < endSearch; i++) {
+                const el = allWords[i];
+                if (!el) continue;
+
+                // 1. Verifica se a palavra bate
+                if (el.dataset.clean === cleanSpoken) {
+                    
+                    const wordLine = parseInt(el.dataset.line);
+
+                    // 2. A REGRA DO BLOQUEIO (LINE LOCK)
+                    
+                    // Se a palavra é da MESMA linha atual: PERMITE
+                    if (wordLine === currentLineIndex) {
+                        matchIndex = i;
+                        break;
+                    } 
+                    
+                    // Se a palavra é da PRÓXIMA linha:
+                    // SÓ PERMITE se já passamos pela "Zona Final" da linha atual
+                    else if (wordLine === currentLineIndex + 1) {
+                        
+                        let canAdvance = false;
+                        
+                        // Verifica se alguma das últimas 5 palavras lidas estava na zona final
+                        // Ou se o índice atual já é muito alto
+                        if (currentWordIndex > -1) {
+                             // Olha o elemento atual (onde estamos parados)
+                             const currentEl = allWords[currentWordIndex];
+                             if (currentEl && currentEl.dataset.endzone === "true") {
+                                 canAdvance = true;
+                             }
+                             // Segurança extra: Se estamos na última palavra da linha
+                             const nextEl = allWords[currentWordIndex + 1];
+                             if (nextEl && parseInt(nextEl.dataset.line) > currentLineIndex) {
+                                 canAdvance = true;
+                             }
+                        } else {
+                            // Caso especial: Primeira linha
+                            canAdvance = false; 
+                        }
+
+                        if (canAdvance) {
+                            matchIndex = i;
+                            currentLineIndex = wordLine; // Atualiza a linha atual
+                            break;
+                        } else {
+                            // BLOQUEADO: Tentou ler próxima linha mas não terminou a atual
+                            console.log("Bloqueado: Termine a linha " + currentLineIndex);
+                        }
+                    }
+                }
+            }
+
+            if (matchIndex !== -1) {
+                currentWordIndex = matchIndex;
+                updateScroll(matchIndex);
+            }
+        }
+
+        function updateScroll(index) {
+            // Atualiza Classes CSS
+            allWords.forEach((el, i) => {
+                el.classList.remove('current', 'read');
+                if (i < index) el.classList.add('read');
+                if (i === index) el.classList.add('current');
+            });
+
+            // Rola a tela
+            const el = allWords[index];
+            const container = document.getElementById('scrolling-content');
+            
+            // Centraliza na linha vermelha (35% do topo)
+            const target = el.offsetTop - (window.innerHeight * 0.35);
+            
+            container.scrollTo({
+                top: target,
+                behavior: 'smooth'
+            });
+        }
+    </script>
+</body>
+</html>
