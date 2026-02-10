@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Teleprompter V13 - Cinema</title>
+    <title>Teleprompter V14 - Studio</title>
     <style>
         /* --- ESTILO GERAL --- */
         body { margin: 0; background-color: #000; color: white; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
@@ -44,22 +44,37 @@
         #prompter-window {
             display: none; width: 100%; height: 100vh; position: relative;
             background: black; overflow: hidden;
-            cursor: pointer; /* Indica que é clicável para mostrar menus */
+            cursor: pointer; 
+        }
+
+        /* OVERLAY DE CONTAGEM REGRESSIVA */
+        #countdown-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9); z-index: 200;
+            display: none; align-items: center; justify-content: center;
+            font-size: 180px; font-weight: bold; color: #28a745;
+            text-shadow: 0 0 30px #28a745;
         }
 
         /* Container de Rolagem */
         #scrolling-content {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            overflow-y: auto; padding: 0 20px;
+            overflow-y: auto; 
+            padding: 0; /* Padding removido aqui para usar margem no texto */
             scroll-behavior: smooth;
         }
         #scrolling-content::-webkit-scrollbar { display: none; }
         
         #text-display {
             padding-top: 40vh; padding-bottom: 60vh;
-            font-size: 55px; line-height: 1.3; 
-            text-align: justify; 
-            font-weight: bold; margin: 0 auto; max-width: 900px;
+            font-size: 55px; line-height: 1.4; 
+            
+            /* CENTRALIZAÇÃO E MARGENS */
+            text-align: center; /* Texto centralizado */
+            width: 80%; /* Ocupa apenas 80% da tela (cria margens laterais de 10%) */
+            margin: 0 auto; /* Centraliza o bloco na tela */
+            
+            font-weight: bold; max-width: 900px;
             color: #444;
         }
 
@@ -100,26 +115,23 @@
         #control-bar {
             position: fixed; bottom: 40px; left: 0; width: 100%;
             display: flex; justify-content: center; gap: 30px; z-index: 100;
-            transition: opacity 0.5s ease-in-out; /* O segredo do Fade */
+            transition: opacity 0.5s ease-in-out;
             opacity: 1;
         }
-        
-        /* Classe para esconder */
         .fade-out { opacity: 0 !important; pointer-events: none; }
 
         .c-btn {
             width: 65px; height: 65px; border-radius: 50%; 
-            background: rgba(255, 255, 255, 0.15); /* Fundo Transparente */
-            border: 1px solid rgba(255, 255, 255, 0.4); /* Borda Fina */
+            background: rgba(255, 255, 255, 0.15); 
+            border: 1px solid rgba(255, 255, 255, 0.4); 
             color: white; font-size: 24px; font-weight: bold; cursor: pointer;
-            backdrop-filter: blur(5px); /* Efeito Vidro */
+            backdrop-filter: blur(5px);
             display: flex; align-items: center; justify-content: center;
             transition: all 0.2s;
         }
         .c-btn:hover { background: rgba(255, 255, 255, 0.3); transform: scale(1.1); }
         .c-btn:active { transform: scale(0.95); }
 
-        /* Cores leves no ícone ao invés do fundo */
         #btn-reset { color: #88f9ff; }
         #btn-pause { color: #ffeeba; }
         #btn-exit { color: #ffadad; }
@@ -134,11 +146,11 @@
 <body>
 
     <div id="setup-panel">
-        <h2>Teleprompter V13</h2>
-        <textarea id="input-text">Teste de botões transparentes.
-Toque na tela para fazer os botões aparecerem.
-Espere 3 segundos e eles somem.
-Ao pausar, o microfone desliga para economizar bateria.</textarea>
+        <h2>Teleprompter V14</h2>
+        <textarea id="input-text">Teste de margens e contagem.
+Ao iniciar, haverá uma contagem de 5 segundos.
+O texto está centralizado com margens laterais.
+Isso ajuda a manter os olhos no centro da tela.</textarea>
         
         <div class="box">
             <label>
@@ -172,6 +184,8 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
     </div>
 
     <div id="prompter-window" onclick="userInteracted()">
+        <div id="countdown-overlay">5</div>
+        
         <div id="status-hud">Inicializando...</div>
         
         <div id="scrolling-content">
@@ -201,8 +215,6 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
         let silenceCheckInterval = null;
         let isAutoPiloting = false;
         let isGlobalPaused = false;
-        
-        // Timer de Fade
         let inactivityTimer = null;
 
         // --- UI ---
@@ -224,27 +236,21 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
             hud.innerText = text;
             hud.className = type;
             hud.style.display = 'block';
-            hud.style.opacity = 1; // Garante visibilidade
+            hud.style.opacity = 1; 
         }
 
-        // --- GESTÃO DE VISIBILIDADE (AUTO-HIDE) ---
         function userInteracted() {
             const bar = document.getElementById('control-bar');
             const hud = document.getElementById('status-hud');
-            
-            // Mostra
             bar.classList.remove('fade-out');
             hud.style.opacity = 1;
-
-            // Reinicia timer
             clearTimeout(inactivityTimer);
             
-            // Só esconde se NÃO estiver pausado. Se pausado, mantém botões visíveis.
             if (!isGlobalPaused) {
                 inactivityTimer = setTimeout(() => {
                     bar.classList.add('fade-out');
-                    hud.style.opacity = 0.3; // HUD fica bem clarinho
-                }, 3000); // 3 segundos
+                    hud.style.opacity = 0.3; 
+                }, 3000); 
             }
         }
 
@@ -286,19 +292,38 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
             document.getElementById('setup-panel').style.display = 'none';
             win.style.display = 'block';
 
-            // Reset
-            resetVariables();
+            // INICIAR CONTAGEM REGRESSIVA
+            startCountdown();
+        }
 
-            // Iniciar
-            if (isHybridMode) {
-                startVoiceEngine(); // Liga o Mic
-                startSilenceWatcher();
-            } else {
-                startManualAutoScroll();
-            }
-            
-            // Inicia timer de esconder botões
-            userInteracted();
+        function startCountdown() {
+            const overlay = document.getElementById('countdown-overlay');
+            overlay.style.display = 'flex';
+            let count = 5;
+            overlay.innerText = count;
+
+            // Bloqueia interações durante contagem
+            isGlobalPaused = true; 
+
+            const timer = setInterval(() => {
+                count--;
+                if(count > 0) {
+                    overlay.innerText = count;
+                } else {
+                    clearInterval(timer);
+                    overlay.style.display = 'none';
+                    
+                    // Começa de verdade
+                    resetVariables(); // Libera o pause e zera tudo
+                    if (isHybridMode) {
+                        startVoiceEngine(); 
+                        startSilenceWatcher();
+                    } else {
+                        startManualAutoScroll();
+                    }
+                    userInteracted();
+                }
+            }, 1000);
         }
 
         function resetVariables() {
@@ -320,54 +345,42 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
             document.getElementById('setup-panel').style.display = 'flex';
         }
 
-        // --- CONTROLES DE PAUSA E ENERGIA ---
+        // --- CONTROLES ---
         function togglePause() {
             isGlobalPaused = !isGlobalPaused;
             const btn = document.getElementById('btn-pause');
             
             if (isGlobalPaused) {
-                // PAUSA ATIVADA
                 btn.innerText = "▶";
-                updateHud("⏸ PAUSADO (Mic Off)", "paused");
-                
-                // 1. Para Scroll
+                updateHud("⏸ PAUSADO", "paused");
                 if (autoScrollInterval) clearInterval(autoScrollInterval);
-                
-                // 2. DESLIGA MICROFONE (Economia de Bateria)
-                if (recognition) {
-                    try { recognition.stop(); } catch(e){}
-                }
-
-                // 3. Mantém botões visíveis
+                if (recognition) try { recognition.stop(); } catch(e){}
                 clearTimeout(inactivityTimer);
                 document.getElementById('control-bar').classList.remove('fade-out');
-
             } else {
-                // RETOMAR
                 btn.innerText = "⏸";
                 updateHud("▶ Retomando...", "voice");
                 lastVoiceTime = Date.now();
-                
-                // 1. RELIGA MICROFONE (Se for modo híbrido)
-                if (isHybridMode) {
-                    try { recognition.start(); } catch(e){}
-                } else {
-                    startManualAutoScroll();
-                }
-
-                // 2. Reativa timer de esconder botões
+                if (isHybridMode) try { recognition.start(); } catch(e){}
+                else startManualAutoScroll();
                 userInteracted();
             }
         }
 
         function resetPrompter() {
             if (autoScrollInterval) clearInterval(autoScrollInterval);
-            resetVariables();
+            // Ao resetar, fazemos a contagem de novo? Geralmente não, volta direto ao topo pronto pra ler.
+            // Mas resetamos as variáveis
+            currentWordIndex = -1;
+            allWordsElements.forEach(el => el.classList.remove('current', 'read'));
+            document.getElementById('scrolling-content').scrollTo(0,0);
+            
             updateHud("↺ Reiniciado", "voice");
             
-            // Se resetar enquanto pausado, mantém pausado.
-            // Se resetar rodando, retoma.
+            // Mantém estado de pausa se estava pausado
             if (!isGlobalPaused) {
+                lastVoiceTime = Date.now();
+                isAutoPiloting = false;
                 if(!isHybridMode) setTimeout(startManualAutoScroll, 1000);
             }
         }
@@ -382,7 +395,6 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
             if (silenceCheckInterval) clearInterval(silenceCheckInterval);
             silenceCheckInterval = setInterval(() => {
                 if (isGlobalPaused) return; 
-
                 const timeSinceVoice = Date.now() - lastVoiceTime;
                 if (timeSinceVoice > 2000 && !isAutoPiloting) {
                     isAutoPiloting = true;
@@ -395,7 +407,6 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
         function runAutoScrollLoop() {
             const msPerWord = 60000 / targetWPM;
             if (autoScrollInterval) clearInterval(autoScrollInterval);
-            
             autoScrollInterval = setInterval(() => {
                 if (isGlobalPaused) return;
                 if (currentWordIndex < allWordsElements.length - 1) {
@@ -411,7 +422,6 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
         function startVoiceEngine() {
             const hud = document.getElementById('status-hud');
             hud.style.display = 'block';
-
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) return;
 
@@ -422,7 +432,6 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
             recognition.maxAlternatives = 1;
 
             recognition.onend = () => {
-                // SÓ RELIGA SE NÃO ESTIVER PAUSADO GLOBALMENTE
                 if (document.getElementById('prompter-window').style.display === 'block' && !isGlobalPaused) {
                     try { recognition.start(); } catch(e){}
                 }
@@ -430,7 +439,6 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
 
             recognition.onresult = (event) => {
                 if (isGlobalPaused) return;
-
                 const resultIndex = event.resultIndex;
                 const transcript = event.results[resultIndex][0].transcript.toLowerCase().trim();
                 const spokenWords = transcript.split(/\s+/);
@@ -446,21 +454,20 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
         function findWordStrict(spokenWord) {
             const cleanSpoken = spokenWord.replace(/[^\wÀ-ÿ]/g, "");
             
-            // LOOK AHEAD LIMITADO (TRILHO)
-            const LOOK_AHEAD_LIMIT = 3; 
+            // --- HORIZONTE DE 5 PALAVRAS ---
+            const LOOK_AHEAD_LIMIT = 5; 
+            
             const startSearch = currentWordIndex + 1;
             const endSearch = Math.min(startSearch + LOOK_AHEAD_LIMIT, allWordsElements.length);
             
             for (let i = startSearch; i < endSearch; i++) {
                 if (allWordsElements[i].dataset.clean === cleanSpoken) {
                     lastVoiceTime = Date.now();
-                    
                     if (isAutoPiloting) {
                         isAutoPiloting = false;
                         clearInterval(autoScrollInterval);
                     }
                     updateHud("🎤 Ouvindo...", "voice");
-
                     currentWordIndex = i;
                     highlightAndScroll(i);
                     break;
@@ -470,12 +477,10 @@ Ao pausar, o microfone desliga para economizar bateria.</textarea>
 
         // --- VISUAL ---
         function highlightAndScroll(index) {
-            // Limpa anteriores
             for(let i = index - 1; i >= Math.max(0, index - 5); i--) {
                 allWordsElements[i].classList.remove('current');
                 allWordsElements[i].classList.add('read');
             }
-
             const el = allWordsElements[index];
             if (el) {
                 el.classList.add('current');
