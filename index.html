@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Teleprompter V11 - Adaptativo</title>
+    <title>Teleprompter V12 - Trilho Blindado</title>
     <style>
         /* --- ESTILO GERAL --- */
         body { margin: 0; background-color: #000; color: white; font-family: 'Segoe UI', Arial, sans-serif; overflow: hidden; }
@@ -50,22 +50,23 @@
         #scrolling-content {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
             overflow-y: auto; padding: 0 20px; /* Margem lateral */
-            scroll-behavior: smooth;
+            scroll-behavior: smooth; /* O segredo do deslizamento */
         }
         #scrolling-content::-webkit-scrollbar { display: none; }
         
         #text-display {
             padding-top: 40vh; padding-bottom: 60vh;
-            font-size: 55px; line-height: 1.3; /* Altura da linha reduzida */
+            font-size: 55px; line-height: 1.3; 
             text-align: justify; 
             font-weight: bold; margin: 0 auto; max-width: 900px;
             color: #444;
         }
 
-        /* PALAVRAS COMPACTAS */
+        /* PALAVRAS (Espaçamento Reduzido) */
         .word { 
             display: inline-block; 
-            margin-right: 0.2em; /* ESPAÇAMENTO REDUZIDO PELA METADE (Antes era o espaço natural ~0.4em) */
+            margin-right: 0.15em; /* Espaço bem curto entre palavras */
+            padding: 2px 0;
             border-radius: 3px; 
             transition: color 0.1s, background 0.1s;
         }
@@ -73,15 +74,17 @@
         
         .word.current { 
             color: #ffff00; 
-            background: rgba(255, 255, 0, 0.2);
-            box-shadow: 0 0 10px rgba(255,255,0,0.3);
+            /* background: rgba(255, 255, 0, 0.2); REMOVIDO FUNDO PARA FICAR MAIS LIMPO */
+            text-shadow: 0 0 15px rgba(255,255,0,0.8);
+            border-bottom: 3px solid yellow; /* Sublinhado forte */
         }
 
         /* Marcador de Linha */
         #center-marker {
             position: fixed; top: 35%; left: 0; width: 100%; height: 2px;
-            background: rgba(255, 0, 0, 0.4); z-index: 20; pointer-events: none;
+            background: rgba(255, 0, 0, 0.5); z-index: 20; pointer-events: none;
         }
+        #center-marker::before { content: "▼ LEITURA"; color: red; position: absolute; left: 10px; top: -15px; font-size: 10px; font-weight:bold; letter-spacing: 2px; }
 
         /* Status HUD */
         #status-hud {
@@ -96,17 +99,17 @@
 
         /* BARRA DE CONTROLES INFERIOR */
         #control-bar {
-            position: fixed; bottom: 20px; left: 0; width: 100%;
-            display: flex; justify-content: center; gap: 20px; z-index: 100;
-            pointer-events: none; /* Deixa clicar no texto se precisar */
+            position: fixed; bottom: 30px; left: 0; width: 100%;
+            display: flex; justify-content: center; gap: 25px; z-index: 100;
+            pointer-events: none; 
         }
         
         .c-btn {
             pointer-events: auto;
-            width: 60px; height: 60px; border-radius: 50%; border: none;
-            color: white; font-size: 24px; font-weight: bold; cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
-            transition: transform 0.1s;
+            width: 70px; height: 70px; border-radius: 50%; border: none;
+            color: white; font-size: 28px; font-weight: bold; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center;
+            transition: transform 0.1s; border: 2px solid rgba(255,255,255,0.2);
         }
         .c-btn:active { transform: scale(0.9); }
 
@@ -124,11 +127,12 @@
 <body>
 
     <div id="setup-panel">
-        <h2>Teleprompter V11</h2>
-        <textarea id="input-text">Teste de espaçamento reduzido.
-As palavras devem ficar mais próximas.
-Isso ajuda a caber mais texto na tela do celular.
-Use os botões abaixo para Pausar ou Resetar.</textarea>
+        <h2>Teleprompter V12 - Trilho</h2>
+        <textarea id="input-text">Teste de trilho.
+Ele vai ler palavra por palavra.
+Se houver uma palavra repetida na linha de baixo ele ignora.
+Só passa para a próxima linha quando terminar a atual.
+Pode pausar e continuar do mesmo ponto.</textarea>
         
         <div class="box">
             <label>
@@ -141,7 +145,7 @@ Use os botões abaixo para Pausar ou Resetar.</textarea>
             <div>
                 <label style="font-size:13px; margin-bottom:5px;" id="lbl-wpm">Velocidade (WPM)</label>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <input type="number" id="wpm-speed" value="140">
+                    <input type="number" id="wpm-speed" value="130">
                 </div>
             </div>
             <div>
@@ -181,7 +185,7 @@ Use os botões abaixo para Pausar ou Resetar.</textarea>
         // --- GLOBAIS ---
         let recognition;
         let allWordsElements = [];
-        let currentWordIndex = -1;
+        let currentWordIndex = -1; // -1 significa que ainda não leu a primeira
         
         // Estados
         let isHybridMode = true; 
@@ -226,16 +230,13 @@ Use os botões abaixo para Pausar ou Resetar.</textarea>
 
             if (!rawText.trim()) return alert("Digite um texto!");
 
-            // FORMATAÇÃO COM ESPAÇAMENTO REDUZIDO
-            // Removemos espaços extras e geramos spans sem espaços entre eles no HTML
-            // O espaçamento visual vem do CSS .word { margin-right: 0.2em }
+            // FORMATAÇÃO ESTRITA
             const continuousText = rawText.replace(/\n/g, " ").replace(/\s+/g, " ");
             const words = continuousText.split(" ");
             
             let htmlHTML = "";
             words.forEach((word, index) => {
                 const clean = word.toLowerCase().replace(/[^\wÀ-ÿ]/g, ""); 
-                // Note que não tem espaço após o </span>
                 htmlHTML += `<span id="w-${index}" class="word" data-clean="${clean}">${word}</span>`;
             });
 
@@ -286,7 +287,7 @@ Use os botões abaixo para Pausar ou Resetar.</textarea>
             document.getElementById('setup-panel').style.display = 'flex';
         }
 
-        // --- NOVOS CONTROLES ---
+        // --- CONTROLES DE PAUSA E RESET ---
         function togglePause() {
             isGlobalPaused = !isGlobalPaused;
             const btn = document.getElementById('btn-pause');
@@ -294,34 +295,27 @@ Use os botões abaixo para Pausar ou Resetar.</textarea>
             if (isGlobalPaused) {
                 btn.innerText = "▶";
                 updateHud("⏸ PAUSADO", "paused");
-                // Para o auto scroll se estiver rodando
                 if (autoScrollInterval) clearInterval(autoScrollInterval);
             } else {
                 btn.innerText = "⏸";
                 updateHud("▶ Retomando...", "voice");
-                lastVoiceTime = Date.now(); // Reseta timer de silêncio para não disparar imediato
+                lastVoiceTime = Date.now();
                 
-                // Se não for híbrido, retoma o scroll manual
+                // Se for manual, retoma o scroll
                 if (!isHybridMode) startManualAutoScroll();
             }
         }
 
         function resetPrompter() {
-            // Para tudo
             if (autoScrollInterval) clearInterval(autoScrollInterval);
-            
-            // Reseta variáveis
             resetVariables();
-            
             updateHud("↺ Reiniciado", "voice");
-            
-            // Se não for modo híbrido e não estiver pausado, recomeça o scroll
             if (!isHybridMode && !isGlobalPaused) {
                 setTimeout(startManualAutoScroll, 1000);
             }
         }
 
-        // --- AUTO SCROLL ---
+        // --- AUTO SCROLL (RESGATE) ---
         function startManualAutoScroll() {
             updateHud("Auto Scroll", "auto");
             runAutoScrollLoop();
@@ -330,7 +324,7 @@ Use os botões abaixo para Pausar ou Resetar.</textarea>
         function startSilenceWatcher() {
             if (silenceCheckInterval) clearInterval(silenceCheckInterval);
             silenceCheckInterval = setInterval(() => {
-                if (isGlobalPaused) return; // Não faz nada se estiver pausado manualmente
+                if (isGlobalPaused) return;
 
                 const timeSinceVoice = Date.now() - lastVoiceTime;
                 
@@ -358,7 +352,7 @@ Use os botões abaixo para Pausar ou Resetar.</textarea>
             }, msPerWord);
         }
 
-        // --- VOZ ---
+        // --- VOZ (LÓGICA DO TRILHO / TRACK LOGIC) ---
         function startVoiceEngine() {
             const hud = document.getElementById('status-hud');
             hud.style.display = 'block';
@@ -379,7 +373,7 @@ Use os botões abaixo para Pausar ou Resetar.</textarea>
             };
 
             recognition.onresult = (event) => {
-                if (isGlobalPaused) return; // Ignora voz se estiver pausado
+                if (isGlobalPaused) return;
 
                 const resultIndex = event.resultIndex;
                 const transcript = event.results[resultIndex][0].transcript.toLowerCase().trim();
@@ -387,27 +381,37 @@ Use os botões abaixo para Pausar ou Resetar.</textarea>
                 const lastSpokenWord = spokenWords[spokenWords.length - 1];
 
                 if (!lastSpokenWord) return;
-                findWordSafely(lastSpokenWord);
+                
+                // Executa a busca estrita
+                findWordStrict(lastSpokenWord);
             };
 
             try { recognition.start(); } catch(e) {}
         }
 
-        function findWordSafely(spokenWord) {
+        function findWordStrict(spokenWord) {
             const cleanSpoken = spokenWord.replace(/[^\wÀ-ÿ]/g, "");
             
-            // --- HORIZONTE ADAPTATIVO (20 palavras) ---
-            // Independentemente do tamanho da tela, olhamos 20 palavras à frente.
-            // Isso cobre ~5 linhas num celular e ~1.5 linhas num PC.
-            const LOOK_AHEAD = 20; 
+            // --- AQUI ESTÁ O SEGREDO DO "SLIDING" ---
+            // Em vez de olhar 20 palavras à frente, olhamos APENAS 3.
+            // i+1 (A próxima imediata)
+            // i+2 (Caso o microfone tenha "comido" uma preposição curta)
+            // i+3 (Limite máximo de segurança)
+            
+            // Isso impede matematicamente que ele pule para outra linha,
+            // pois 3 palavras nunca são suficientes para pular uma linha inteira
+            // num teleprompter normal.
+            
+            const LOOK_AHEAD_LIMIT = 3; 
             
             const startSearch = currentWordIndex + 1;
-            const endSearch = Math.min(startSearch + LOOK_AHEAD, allWordsElements.length);
+            // Garante que não busca além do final do array
+            const endSearch = Math.min(startSearch + LOOK_AHEAD_LIMIT, allWordsElements.length);
             
             for (let i = startSearch; i < endSearch; i++) {
                 if (allWordsElements[i].dataset.clean === cleanSpoken) {
                     
-                    // Match!
+                    // MATCH!
                     lastVoiceTime = Date.now();
                     
                     if (isAutoPiloting) {
@@ -418,29 +422,36 @@ Use os botões abaixo para Pausar ou Resetar.</textarea>
 
                     currentWordIndex = i;
                     highlightAndScroll(i);
-                    break; 
+                    break; // Achou a próxima? Para imediatamente. Não procura mais longe.
                 }
             }
+            // Se não achou nas próximas 3, NÃO FAZ NADA.
+            // O Auto-Scroll vai entrar em 2 segundos e empurrar o texto.
         }
 
-        // --- VISUAL ---
+        // --- VISUAL DESLIZANTE ---
         function highlightAndScroll(index) {
-            // Limpa anteriores (Otimizado: limpa todos se necessário ou só o anterior)
-            const prev = allWordsElements[currentWordIndex - 1];
-            if(prev) {
-                prev.classList.remove('current');
-                prev.classList.add('read');
+            // Limpeza Visual (Marca passados como lidos)
+            // Para garantir que a linha anterior fique branca, marcamos todos para trás
+            // Em um loop reverso curto para performance
+            for(let i = index - 1; i >= Math.max(0, index - 5); i--) {
+                allWordsElements[i].classList.remove('current');
+                allWordsElements[i].classList.add('read');
             }
-            
+
             // Marca atual
             const el = allWordsElements[index];
             if (el) {
                 el.classList.add('current');
                 
-                // Scroll
+                // SCROLL SUAVE PARA LINHA VERMELHA (35%)
                 const container = document.getElementById('scrolling-content');
                 const target = el.offsetTop - (window.innerHeight * 0.35);
-                container.scrollTo({ top: target, behavior: 'smooth' });
+                
+                container.scrollTo({
+                    top: target,
+                    behavior: 'smooth' // CSS trata a suavidade
+                });
             }
         }
     </script>
