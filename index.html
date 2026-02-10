@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Teleprompter Blindado v7.0</title>
+    <title>Teleprompter Pro </title>
     <style>
         /* --- ESTILO GERAL --- */
-        body { margin: 0; background-color: #050505; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        body { margin: 0; background-color: #000; color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         
         /* Menu de Configuração */
         #setup-panel {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: #121212; z-index: 30; padding: 20px; box-sizing: border-box;
+            background: #111; z-index: 50; padding: 20px; box-sizing: border-box;
             display: flex; flex-direction: column; gap: 15px; overflow-y: auto;
         }
 
-        h2 { color: #fff; margin-bottom: 5px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        h2 { color: #fff; border-bottom: 1px solid #333; padding-bottom: 10px; margin-top: 0; }
         
         textarea {
             width: 100%; height: 120px; background: #222; color: #ddd;
@@ -23,153 +23,44 @@
             font-family: monospace; resize: vertical;
         }
         
-        .box { background: #1e1e1e; border-radius: 8px; padding: 15px; border: 1px solid #333; margin-bottom: 10px; }
+        .box { background: #1e1e1e; border-radius: 8px; padding: 15px; border: 1px solid #333; }
         
-        label { display: flex; align-items: center; gap: 10px; color: #ccc; cursor: pointer; font-size: 15px; }
-        input[type="checkbox"] { transform: scale(1.4); }
-        input[type="number"] { padding: 10px; border-radius: 5px; border: none; background: #333; color: white; width: 70px; }
+        label { display: flex; align-items: center; gap: 10px; color: #ccc; font-size: 16px; }
+        input[type="checkbox"] { transform: scale(1.3); margin: 0; }
+        input[type="number"] { padding: 10px; border-radius: 5px; border: none; background: #333; color: white; width: 80px; text-align: center;}
 
+        /* Botões */
         .btn {
-            padding: 15px; border: none; border-radius: 8px; cursor: pointer; 
-            font-size: 16px; font-weight: bold; width: 100%; text-transform: uppercase;
-            color: white; margin-top: 5px;
+            padding: 18px; border: none; border-radius: 8px; cursor: pointer; 
+            font-size: 18px; font-weight: bold; width: 100%; text-transform: uppercase;
+            color: white; margin-top: 5px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        .btn-start { background: linear-gradient(90deg, #28a745, #218838); }
+        .btn:active { transform: scale(0.98); }
+        .btn-start { background: #28a745; margin-bottom: 30px; }
         .btn-full { background: #17a2b8; margin-bottom: 10px; }
 
-        /* --- ÁREA DO PROMPTER --- */
+        /* --- TELA DE LEITURA --- */
         #prompter-window {
             display: none; width: 100%; height: 100vh; position: relative;
             background: black; overflow: hidden;
         }
 
-        /* Onde o texto mora */
+        /* Container de Rolagem */
         #scrolling-content {
             position: absolute; top: 0; left: 0; right: 0; bottom: 0;
-            overflow-y: auto; padding: 0 40px; /* Margem lateral maior */
+            overflow-y: auto; padding: 0 20px;
             scroll-behavior: smooth;
-            -ms-overflow-style: none; scrollbar-width: none;
         }
+        /* Esconde barra de rolagem */
         #scrolling-content::-webkit-scrollbar { display: none; }
         
         #text-display {
-            padding-top: 40vh; padding-bottom: 80vh;
-            font-size: 50px; line-height: 1.6; text-align: left; /* Alinhado a esquerda ajuda na leitura */
+            padding-top: 40vh; padding-bottom: 60vh;
+            font-size: 50px; line-height: 1.5; text-align: left;
             font-weight: bold; margin: 0 auto; max-width: 900px;
-            color: #444; /* Texto futuro bem apagado */
+            color: #444; /* Texto futuro escuro */
         }
 
-        /* ESTILO DAS PALAVRAS */
+        /* Palavras */
         .word { 
-            transition: color 0.1s; 
-            padding: 2px 5px; 
-            border-radius: 4px; 
-            display: inline-block;
-        }
-        
-        /* Palavra Lida (Passado) */
-        .word.read { color: #fff; opacity: 0.5; }
-        
-        /* Palavra Atual (Foco) */
-        .word.current { 
-            color: #ffff00; /* Amarelo */
-            background: rgba(255, 255, 0, 0.15);
-            transform: scale(1.05); 
-            text-shadow: 0 0 10px rgba(255, 255, 0, 0.5);
-        }
-
-        /* Marcador Visual de Linha Bloqueada */
-        .line-locked { border-right: 3px solid red; }
-        .line-unlocked { border-right: 3px solid green; }
-
-        /* Marcador Visual Fixo */
-        #center-marker {
-            position: fixed; top: 35%; left: 0; width: 100%; height: 2px;
-            background: rgba(255, 0, 0, 0.3); z-index: 20; pointer-events: none;
-        }
-
-        /* HUD de Status */
-        #voice-hud {
-            position: fixed; top: 20px; right: 20px; z-index: 100;
-            background: rgba(0,0,0,0.8); color: white; padding: 8px 15px;
-            border-radius: 20px; font-size: 14px; border: 1px solid #555;
-            display: none;
-        }
-        #voice-hud.active { border-color: lime; color: lime; }
-
-        /* Botão Sair */
-        #btn-exit {
-            position: fixed; bottom: 20px; right: 20px; z-index: 100; opacity: 0.3;
-            background: red; color: white; border: none; padding: 15px; border-radius: 50%;
-            font-weight: bold; cursor: pointer;
-        }
-        #btn-exit:hover { opacity: 1; }
-
-    </style>
-</head>
-<body>
-
-    <div id="setup-panel">
-        <h2>Teleprompter Blindado v7.0</h2>
-        
-        <textarea id="input-text" placeholder="Cole seu texto aqui...">Este é um teste de segurança.
-O sistema não deve pular linhas.
-Ele deve esperar você terminar esta frase.
-Só depois de ler a última palavra, ele libera a próxima.
-Isso evita que o texto corra demais.</textarea>
-        
-        <div class="box">
-            <label>
-                <input type="checkbox" id="check-voice" checked> 
-                🎙️ Ativar Rolagem por Voz (Smart Gate)
-            </label>
-        </div>
-
-        <div class="box" style="display:flex; gap:15px; flex-wrap:wrap;">
-            <div style="flex:1;">
-                <label style="font-size:12px;">Tamanho (px)</label>
-                <input type="number" id="font-size" value="55">
-            </div>
-        </div>
-
-        <div class="box">
-            <div style="display:flex; gap:20px;">
-                <label><input type="checkbox" id="check-mirror-x"> Espelhar X</label>
-                <label><input type="checkbox" id="check-mirror-y"> Espelhar Y</label>
-            </div>
-        </div>
-
-        <button class="btn btn-full" onclick="toggleFullScreen()">⛶ TELA CHEIA</button>
-        <button class="btn btn-start" onclick="startPrompter()">INICIAR ▶</button>
-    </div>
-
-    <div id="prompter-window">
-        <div id="voice-hud">Aguardando...</div>
-        <div id="scrolling-content">
-            <div id="text-display"></div>
-        </div>
-        <div id="center-marker"></div>
-        <button id="btn-exit" onclick="stopPrompter()">X</button>
-    </div>
-
-    <script>
-        // Variáveis Globais
-        let recognition;
-        let allWordsElements = []; 
-        let currentWordIndex = -1; // Índice da palavra atual confirmada
-        
-        // --- FUNÇÕES DE CONTROLE ---
-        function toggleFullScreen() {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().catch(e => console.log(e));
-            } else {
-                document.exitFullscreen();
-            }
-        }
-
-        function startPrompter() {
-            const rawText = document.getElementById('input-text').value;
-            const fontSize = document.getElementById('font-size').value;
-            const useVoice = document.getElementById('check-voice').checked;
-            const mirrorX = document.getElementById('check-mirror-x').checked;
-            const
+            display: inline-block; padding: 2px 4px; border-radius: 4px; transition: all 0.2s;
